@@ -18,6 +18,7 @@ namespace Akila.FPSFramework
         /// </summary>
         [Tooltip("The name of the actor. Automatically set during respawn.")]
         public string actorName;
+        public bool isLocalPlayer = false;
 
         [Header("Respawning")]
 

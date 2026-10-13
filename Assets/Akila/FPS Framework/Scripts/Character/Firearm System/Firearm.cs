@@ -637,6 +637,9 @@ namespace Akila.FPSFramework
 
             Camera mainCamera = FPSFrameworkUtility.GetMainCamera();
 
+            if (mainCamera == null)
+                return;
+
             // Determine the firing position and direction based on preset settings
             switch (preset.shootingDirection)
             {

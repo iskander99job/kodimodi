@@ -6,9 +6,9 @@ namespace Akila.FPSFramework
     {
         public static Camera GetMainCamera()
         {
-            if (Camera.main) return Camera.main;
-
-            return GameObject.FindFirstObjectByType<Camera>();
+            //if (Camera.main) return Camera.main;
+            //Сам добавил
+            return GameObject.FindFirstObjectByType<Camera>(FindObjectsInactive.Exclude);
         }
 
         public static Vector3 RandomVector3(Vector3 refrecne)
