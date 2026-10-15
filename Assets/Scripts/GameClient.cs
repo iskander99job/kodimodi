@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Akila.FPSFramework;
+using Akila.FPSFramework.Animation;
 using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -106,6 +107,7 @@ public class GameClient : MonoBehaviour
             pistol.gameObject.GetComponent<Firearm>().enabled = true;
             pistol.gameObject.GetComponent<FirearmAttachmentsManager>().enabled = true;
             pistol.gameObject.GetComponent<ItemInput>().enabled = true;
+            pistol.transform.Find("Transforms").gameObject.GetComponent<ProceduralAnimator>().enabled = true;
         }
     }
 
