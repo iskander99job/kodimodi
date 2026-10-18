@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Dto
+namespace Kodimodi.Models
 {
     [MemoryPackable]
     public partial class MoveMessage
