@@ -522,6 +522,12 @@ MonoBehaviour:
   - {fileID: 1602776820}
   playerPrefab: {fileID: 1519116242783462850, guid: e1d8fa14d42764c9f9ec9dbb4ca217a2,
     type: 3}
+  enemyPrefab: {fileID: 7508167285887320462, guid: b6a0e69c1bb65124b92c9ba01a54e0f5,
+    type: 3}
+  sendInterval: 0.1
+  interpolationSpeed: 15
+  cameraRootName: CameraRoot
+  useLiveKit: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
