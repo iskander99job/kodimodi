@@ -6,11 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/MenuScene.unity
-    guid: dea66439348d6444c9c8db647bbd8271
-  - enabled: 1
-    path: Assets/Scenes/BattleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/LoafbrrAssets/BackroomsLikeAssetRe/scenes/LevelTst.unity
+    guid: a3f29f1950f6e5945a274cf7349d68b2
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: fe0ad163545f89b47813a7b41af4a66a,
       type: 3}

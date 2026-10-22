@@ -1,111 +1,139 @@
 using System;
-using System.Text;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Kodimodi.Models;
+using MemoryPack;
 using NativeWebSocket;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Kodimodi
 {
     public class MatchmakingClient : MonoBehaviour
     {
-        [Header("UI")] [SerializeField] private Button findMatchButton;
+        [Header("UI")]
+        [SerializeField] private Button findMatchButton, createMatchButton;
         [SerializeField] private TMP_Text findMatchText;
+        [SerializeField] private TMP_InputField playersCountUI;
 
-        [Header("Network")] [SerializeField] private string matchmakingUrl = "ws://localhost:8080/matchmaking";
-        [SerializeField] private string playerName = "Player";
-        [SerializeField] private string gameSceneName = "SampleScene";
+        private readonly string matchmakingUrl = "ws://localhost:8080/matchmaking";
 
-        private WebSocket _mm;
-        private bool _matchFound;
+        private WebSocket _webSocket;
 
-        void Awake()
+        private void Awake()
         {
             findMatchText.gameObject.SetActive(false);
             findMatchButton.interactable = true;
         }
 
-        public void FindMatch()
+        async void Start()
         {
-            findMatchButton.interactable = false;
-            findMatchText.gameObject.SetActive(true);
-            findMatchText.text = "Поиск противника...";
-            _ = ConnectAndWait();
+            _webSocket = new WebSocket(matchmakingUrl);
+
+            _webSocket.OnOpen += () =>
+            {
+                Debug.Log("Connection open!");
+            };
+            _webSocket.OnError += (e) => Debug.Log("Error! " + e);
+            _webSocket.OnClose += (code) => Debug.Log("Connection closed!");
+
+            _webSocket.OnMessage += (bytes) =>
+            {
+                Debug.Log("Received: ");
+            };
+
+            await _webSocket.Connect();
         }
 
-        private async System.Threading.Tasks.Task ConnectAndWait()
+        public async void FindMatch()
         {
+            if (_webSocket == null || (_webSocket != null && _webSocket.State != WebSocketState.Open))
+            {
+                return;
+            }
+            
+            var request = new MatchmakingRequestModel
+            {
+                Action = "find",
+                Count = 0
+            };
+            
+            byte[] bytes = MemoryPackSerializer.Serialize(request);
+            
             try
             {
-                _mm = new WebSocket(matchmakingUrl);
-
-                _mm.OnOpen += () => { Debug.Log("Подключено к матчмейкингу, ждём противника..."); };
-
-                _mm.OnMessage += (bytes) =>
-                {
-                    var json = Encoding.UTF8.GetString(bytes);
-                    Debug.Log($"MM: {json}");
-
-                    var response = JsonUtility.FromJson<MatchFoundResponse>(json);
-                    if (response.type == "matchfound")
-                    {
-                        Debug.Log($"Противник найден! Комната: {response.roomId}");
-
-                        MatchData.RoomId = response.roomId;
-                        MatchData.PlayerName = playerName;
-
-                        findMatchText.text = "Противник найден!";
-
-                        // НЕ грузим сцену здесь — только ставим флаг
-                        _matchFound = true;
-                    }
-                };
-
-                _mm.OnError += (e) =>
-                {
-                    Debug.LogError($"MM ошибка: {e}");
-                    findMatchButton.interactable = true;
-                    findMatchText.text = "Ошибка подключения";
-                };
-
-                _mm.OnClose += (e) => Debug.Log("MM соединение закрыто");
-
-                await _mm.Connect();
+                await _webSocket.Send(bytes);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Не удалось подключиться: {ex.Message}");
-                findMatchButton.interactable = true;
-                findMatchText.text = "Ошибка подключения";
+                Debug.LogError($"CreateMatch failed: {ex}");
             }
         }
+        
+        public async void CreateMatch()
+        {
+            if (string.IsNullOrWhiteSpace(playersCountUI.text))
+            {
+                return;
+            }
+            
+            int playersCount = int.Parse(playersCountUI.text);
 
-        void Update()
+            if (playersCount < 1) return;
+
+            if (_webSocket == null || (_webSocket != null && _webSocket.State != WebSocketState.Open))
+            {
+                return;
+            }
+            
+            var request = new MatchmakingRequestModel
+            {
+                Action = "create",
+                Count  = playersCount
+            };
+            
+            byte[] bytes = MemoryPackSerializer.Serialize(request);
+            
+            try
+            {
+                await _webSocket.Send(bytes);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"CreateMatch failed: {ex}");
+            }
+        }
+        
+        private void Update()
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            _mm?.DispatchMessageQueue();
+            _webSocket?.DispatchMessageQueue();
 #endif
-
-            // Грузим сцену из главного потока, вне сетевого колбэка
-            if (_matchFound)
-            {
-                _matchFound = false;
-                Debug.Log($"Загружаю сцену {gameSceneName}");
-                SceneManager.LoadScene(1);
-            }
         }
 
         private async void OnDestroy()
         {
-            if (_mm != null) await _mm.Close();
+            if (_webSocket != null)
+            {
+                try { await _webSocket.Close(); }
+                catch
+                {
+                    // ignored
+                }
+            }
         }
-
-        [Serializable]
-        private class MatchFoundResponse
+        
+        private async void OnApplicationQuit()
         {
-            public string type;
-            public string roomId;
+            if (_webSocket != null)
+            {
+                try { await _webSocket.Close(); }
+                catch
+                {
+                    // ignored
+                }
+            }
         }
     }
 }
