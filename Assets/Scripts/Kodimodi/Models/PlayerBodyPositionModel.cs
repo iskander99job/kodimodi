@@ -1,0 +1,13 @@
+using MemoryPack;
+
+namespace Kodimodi.Models
+{
+    [MemoryPackable]
+    public partial class PlayerBodyPositionModel
+    {
+        public int Id { get; set; }
+        public Vec3 Position { get; set; }
+        public Vec3 Rotation { get; set; }
+        public bool IsJumping { get; set; }
+    }
+}

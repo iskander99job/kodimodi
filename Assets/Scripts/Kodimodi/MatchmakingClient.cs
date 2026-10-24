@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Kodimodi.Models;
 using MemoryPack;
 using NativeWebSocket;
 using TMPro;
@@ -44,65 +43,6 @@ namespace Kodimodi
             };
 
             await _webSocket.Connect();
-        }
-
-        public async void FindMatch()
-        {
-            if (_webSocket == null || (_webSocket != null && _webSocket.State != WebSocketState.Open))
-            {
-                return;
-            }
-            
-            var request = new MatchmakingRequestModel
-            {
-                Action = "find",
-                Count = 0
-            };
-            
-            byte[] bytes = MemoryPackSerializer.Serialize(request);
-            
-            try
-            {
-                await _webSocket.Send(bytes);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"CreateMatch failed: {ex}");
-            }
-        }
-        
-        public async void CreateMatch()
-        {
-            if (string.IsNullOrWhiteSpace(playersCountUI.text))
-            {
-                return;
-            }
-            
-            int playersCount = int.Parse(playersCountUI.text);
-
-            if (playersCount < 1) return;
-
-            if (_webSocket == null || (_webSocket != null && _webSocket.State != WebSocketState.Open))
-            {
-                return;
-            }
-            
-            var request = new MatchmakingRequestModel
-            {
-                Action = "create",
-                Count  = playersCount
-            };
-            
-            byte[] bytes = MemoryPackSerializer.Serialize(request);
-            
-            try
-            {
-                await _webSocket.Send(bytes);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"CreateMatch failed: {ex}");
-            }
         }
         
         private void Update()
