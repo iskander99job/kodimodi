@@ -642,6 +642,7 @@ MonoBehaviour:
     type: 3}
   enemyPrefab: {fileID: 7508167285887320462, guid: b6a0e69c1bb65124b92c9ba01a54e0f5,
     type: 3}
+  id: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
