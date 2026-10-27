@@ -53,7 +53,7 @@ AnimatorController:
     m_Controller: {fileID: 9100000}
   - m_Name: Aim
     m_Type: 1
-    m_DefaultFloat: 0
+    m_DefaultFloat: 1
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 9100000}
@@ -2888,10 +2888,10 @@ AnimatorStateMachine:
   m_ChildStates:
   - serializedVersion: 1
     m_State: {fileID: 1102877827347367898}
-    m_Position: {x: 276, y: 324, z: 0}
+    m_Position: {x: 280, y: 330, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1102525681791532252}
-    m_Position: {x: -108, y: 324, z: 0}
+    m_Position: {x: -110, y: 330, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -2947,7 +2947,7 @@ AnimatorStateMachine:
     m_Position: {x: 360, y: 288, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1102729790193106288}
-    m_Position: {x: 660, y: 288, z: 0}
+    m_Position: {x: 660, y: 290, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1102350673301619642}
     m_Position: {x: 60, y: 288, z: 0}
