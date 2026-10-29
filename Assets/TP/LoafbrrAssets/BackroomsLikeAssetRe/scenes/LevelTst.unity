@@ -656,6 +656,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1968886155}
   - component: {fileID: 1968886156}
+  - component: {fileID: 1968886157}
   m_Layer: 0
   m_Name: Server
   m_TagString: Untagged
@@ -696,6 +697,19 @@ MonoBehaviour:
   enemyPrefab: {fileID: 1466188265552503313, guid: 5b59a212f4a8d4009b37756e5abfa44b,
     type: 3}
   id: 0
+  livekitToken: 
+--- !u!114 &1968886157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1968886154}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc3dc350c33f4b148fa2cda18e8217cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.Livekit
 --- !u!1 &2110600639
 GameObject:
   m_ObjectHideFlags: 0

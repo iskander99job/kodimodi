@@ -17,6 +17,8 @@ namespace Kodimodi
         
         public WebSocket websocket;
         public int id;
+        public string livekitToken;
+        private bool playersSpawned;
         
         public static BattleClient Instance { get; private set; }
         
@@ -30,7 +32,7 @@ namespace Kodimodi
 
             Instance = this;
         }
-        
+
         async void Start()
         {
             id = Random.Range(352, 647392);
@@ -43,7 +45,7 @@ namespace Kodimodi
                 {
                     id = this.id
                 };
-
+        
                 var bytes = WsProtocol.Pack(WsMessageType.BattlePingRequest, model);
                 
                 await websocket.Send(bytes);
@@ -57,27 +59,27 @@ namespace Kodimodi
             {
                 Debug.Log("Connection closed!");
             };
-
+        
             websocket.OnMessage += (bytes) =>
             {
                 WsEnvelopeModel model = WsProtocol.Unpack(bytes);
-
+        
                 if (model.Type == WsMessageType.BattlePingResponse)
                 {
                     HandleSpawn(model);
                 }
-
+        
                 if (model.Type == WsMessageType.PlayerBodyPosition)
                 {
                     HandleBodyPosition(model);
                 }
-
+        
                 if (model.Type == WsMessageType.Shoot)
                 {
                     HandleShoot(model);
                 }
             };
-
+        
             await websocket.Connect();
         }
 
@@ -99,13 +101,14 @@ namespace Kodimodi
         private void HandleSpawn(WsEnvelopeModel model)
         {
             var resp = WsProtocol.UnpackPayload<BattlePingResponseModel>(model);
-
+            
             foreach (var s in resp.Spawns)
             {
                 var pos = new Vector3(s.Position.X, s.Position.Y, s.Position.Z);
 
                 if (s.Id == this.id)
                 {
+                    livekitToken = resp.LivekitToken;
                     FindAnyObjectByType<Camera>().gameObject.SetActive(false);
                             
                     GameObject player = Instantiate(playerPrefab, pos, Quaternion.identity);
@@ -118,6 +121,8 @@ namespace Kodimodi
                     spawned[s.Id] = player.GetComponent<RemotePlayerVisuals>();
                 }
             }
+            
+            //GetComponent<Livekit>().ConnectToRoom(this.id, livekitToken);
         }
 
         private void HandleShoot(WsEnvelopeModel model)

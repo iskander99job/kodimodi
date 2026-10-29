@@ -7,6 +7,7 @@ namespace Kodimodi.Models
     public partial class BattlePingResponseModel
     {
         public SpawnInfo[] Spawns { get; set; } = Array.Empty<SpawnInfo>();
+        public string LivekitToken { get; set; }
     }
 
     [MemoryPackable]
