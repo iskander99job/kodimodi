@@ -71,6 +71,11 @@ namespace Kodimodi
                 {
                     HandleBodyPosition(model);
                 }
+
+                if (model.Type == WsMessageType.Shoot)
+                {
+                    HandleShoot(model);
+                }
             };
 
             await websocket.Connect();
@@ -113,6 +118,21 @@ namespace Kodimodi
                     spawned[s.Id] = player.GetComponent<RemotePlayerVisuals>();
                 }
             }
+        }
+
+        private void HandleShoot(WsEnvelopeModel model)
+        {
+            var resp = WsProtocol.UnpackPayload<ShootModel>(model);
+                    
+            if (resp.Id == id) return;
+
+            if (!spawned.TryGetValue(resp.Id, out var t) || t == null)
+            {
+                Debug.LogWarning($"No spawned object for id {resp.Id}");
+                return;
+            }
+            
+            t.Shoot();
         }
 
         void Update()

@@ -9,5 +9,7 @@ namespace Kodimodi.Models
         public Vec3 Position { get; set; }
         public Vec3 Rotation { get; set; }
         public bool IsJumping { get; set; }
+        public float H { get; set; }
+        public float V { get; set; }
     }
 }

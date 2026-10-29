@@ -14,12 +14,22 @@ namespace Kodimodi
         private Vector3 lastPacketPos; // запоминаем позицию из прошлого пакета
         private bool initialized;
         private bool prevJumping;
+        
+        private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
+        private static readonly int VerticalHash = Animator.StringToHash("Vertical");
+        private static readonly int InputMagnitudeHash = Animator.StringToHash("InputMagnitude");
+        private static readonly int FireHash = Animator.StringToHash("Fire");
 
         private void Awake()
         {
             if (animator == null) animator = GetComponentInChildren<Animator>();
         }
 
+        public void Shoot()
+        {
+            animator.SetBool(FireHash, true);
+        }
+        
         public void Apply(PlayerBodyPositionModel model)
         {
             Vector3 newPos = new Vector3(model.Position.X, model.Position.Y, model.Position.Z);
@@ -45,14 +55,20 @@ namespace Kodimodi
 
             // --- АНИМАЦИИ ---
             if (animator == null) return;
+            
+            // 2. Передаем направления в Animator
+            animator.SetFloat(HorizontalHash, model.H);
+            animator.SetFloat(VerticalHash, model.V);
 
-            Debug.Log(isMoving);
-            animator.SetBool("IsMoving", isMoving);
+            // 3. Вычисляем длину вектора для InputMagnitude
+            Vector2 inputVector = new Vector2(model.H, model.V);
+            float inputMagnitude = Mathf.Clamp01(inputVector.magnitude); 
+            animator.SetFloat(InputMagnitudeHash, inputMagnitude);
 
-            if (model.IsJumping && !prevJumping)
-                animator.SetTrigger("Jump");
-
-            prevJumping = model.IsJumping;
+            // if (model.IsJumping && !prevJumping)
+            //     animator.SetTrigger("Jump");
+            //
+            // prevJumping = model.IsJumping;
         }
 
         private void Update()

@@ -693,7 +693,7 @@ MonoBehaviour:
   spawnPoints: []
   playerPrefab: {fileID: 1519116242783462850, guid: e1d8fa14d42764c9f9ec9dbb4ca217a2,
     type: 3}
-  enemyPrefab: {fileID: 5850769065026760849, guid: c1fed11b26e6c4aeab5fb077d3cb278e,
+  enemyPrefab: {fileID: 1466188265552503313, guid: 5b59a212f4a8d4009b37756e5abfa44b,
     type: 3}
   id: 0
 --- !u!1 &2110600639

@@ -23,6 +23,13 @@ namespace Kodimodi
         private const float RotEpsilonDeg = 0.1f;   // 0.1 градуса
         private const float HeartbeatInterval = 1.5f; // раз в 1.5 с шлём даже без изменений
 
+        private BattleClient client;
+
+        private void Start()
+        {
+            client = BattleClient.Instance;
+        }
+
         private void Awake()
         {
             lastPos = transform.position;
@@ -31,20 +38,34 @@ namespace Kodimodi
             
             input = GetComponent<CharacterInput>();
         }
-
+        
         async void Update()
         {
-            if (isSending || Time.time < nextSend) return;
-
-            var client = BattleClient.Instance;
             if (client == null || client.websocket == null) return;
+            
+            if (Input.GetMouseButtonDown(0))
+            {
+                var model = new ShootModel
+                {
+                    Id = client.id,
+                };
 
+                var bytes = WsProtocol.Pack(WsMessageType.Shoot, model);
+                Debug.Log("Shoot");
+                await client.websocket.Send(bytes);
+            }
+            
+            if (isSending || Time.time < nextSend) return;
+            
             var pos = transform.position;
             var rot = cameraTransform != null ? cameraTransform.rotation : transform.rotation;
 
             bool posChanged = (pos - lastPos).sqrMagnitude > PosEpsilon * PosEpsilon;
             bool rotChanged = Quaternion.Angle(lastRot, rot) > RotEpsilonDeg;
             bool heartbeat = Time.time - lastSentTime >= HeartbeatInterval;
+            
+            float h = Input.GetAxis("Horizontal");
+            float v = Input.GetAxis("Vertical");
 
             if (!posChanged && !rotChanged && !heartbeat) return;
 
@@ -64,7 +85,9 @@ namespace Kodimodi
                     Id = client.id,
                     Position = new Vec3(pos.x, pos.y, pos.z),
                     Rotation = new Vec3(euler.x, euler.y, euler.z),
-                    IsJumping = input.JumpInput
+                    IsJumping = input.JumpInput,
+                    H = h,
+                    V = v
                 };
 
                 var bytes = WsProtocol.Pack(WsMessageType.PlayerBodyPosition, model);

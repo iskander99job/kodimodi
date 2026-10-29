@@ -14,5 +14,6 @@ namespace Kodimodi.Models
         BattlePingRequest = 1,
         BattlePingResponse = 2,
         PlayerBodyPosition = 3,
+        Shoot = 4
     }
 }
