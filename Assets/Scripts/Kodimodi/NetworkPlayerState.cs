@@ -51,7 +51,6 @@ namespace Kodimodi
                 };
 
                 var bytes = WsProtocol.Pack(WsMessageType.Shoot, model);
-                Debug.Log("Shoot");
                 await client.websocket.Send(bytes);
             }
             
