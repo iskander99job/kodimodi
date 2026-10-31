@@ -1,7 +1,6 @@
 ﻿using Akila.FPSFramework.Animation;
 using System;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Akila.FPSFramework
 {
@@ -858,7 +857,12 @@ namespace Akila.FPSFramework
                     float damage = preset.alwaysApplyFire ? preset.damage : preset.damage / preset.shotCount;
                     Firearm.UpdateHits(this, preset.defaultDecal, ray, hit, damage, preset.decalDirection);
                 }
+                else
+                {
+                    events.OnHit?.Invoke();
+                }
             }
+            
         }
 
         /// <summary>
@@ -1058,6 +1062,14 @@ namespace Akila.FPSFramework
                 }
             }
 
+            // var model = new ShootModel
+            // {
+            //     Id = client.id,
+            // };
+            //
+            // var bytes = WsProtocol.Pack(WsMessageType.Shoot, model);
+            // await client.websocket.Send(bytes);
+            
             // Handle custom decals
             if (hit.transform.TryGetComponent(out CustomDecal customDecal))
             {

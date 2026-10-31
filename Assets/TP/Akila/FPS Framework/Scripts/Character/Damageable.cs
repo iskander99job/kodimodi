@@ -271,14 +271,14 @@ namespace Akila.FPSFramework
                 OnDeath?.Invoke();
             }
 
-            CharacterManager characterManager = this.SearchFor<CharacterManager>();
-
-            if (type == DamagableType.Player && characterManager != null)
-            {
-                characterManager.cameraManager.ShakeCameras(damageCameraShake);
-            }
-
-            UpdateUI();
+            // CharacterManager characterManager = this.SearchFor<CharacterManager>();
+            //
+            // if (type == DamagableType.Player && characterManager != null)
+            // {
+            //     characterManager.cameraManager.ShakeCameras(damageCameraShake);
+            // }
+            //
+            // UpdateUI();
         }
 
         private void UpdateUI()

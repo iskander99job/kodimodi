@@ -989,7 +989,6 @@ GameObject:
   - component: {fileID: 2374307988459447293}
   - component: {fileID: 6690972598176633872}
   - component: {fileID: 981399253390347182}
-  - component: {fileID: 6743145072297425217}
   - component: {fileID: 1683176608378619467}
   - component: {fileID: 7095538475065031449}
   - component: {fileID: 8182431768515220467}
@@ -1259,50 +1258,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &6743145072297425217
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519116242783462850}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac5a991171713d54e95b559072f9cf5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  type: 0
-  health: 100
-  destroyDelay: 0
-  damageCameraShake: 0.2
-  destroyOnDeath: 1
-  destroyRoot: 0
-  ragdolls: 0
-  deathEffect: {fileID: 0}
-  autoHeal: 1
-  regenerationRate: 1
-  autoHealDelay: 5
-  onDeath:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 976052327315722555}
-        m_TargetAssemblyTypeName: Akila.FPSFramework.Inventory, Assembly-CSharp
-        m_MethodName: DropAllItems
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onTryToHeal:
-    m_PersistentCalls:
-      m_Calls: []
-  onRespawn:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &1683176608378619467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2115,7 +2070,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 19.155, y: -20.55}
+  m_AnchoredPosition: {x: 19.155, y: -4}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1503514693544876168
