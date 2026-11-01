@@ -859,7 +859,7 @@ namespace Akila.FPSFramework
                 }
                 else
                 {
-                    events.OnHit?.Invoke();
+                    events.OnHit?.Invoke(null, 0f);
                 }
             }
             
@@ -1037,10 +1037,12 @@ namespace Akila.FPSFramework
             if (firearmAttachmentsManager)
                 damageMultiplier *= firearmAttachmentsManager ? firearmAttachmentsManager.damage : 1;
 
+            float networkDamage = 0;
             // Handle damageable objects
             if (damageable != null && damageable.Health > 0)
             {
                 float totalDamage = damage * damageMultiplier;
+                networkDamage = totalDamage;
 
                 GameObject actorGO = null;
 
@@ -1061,14 +1063,8 @@ namespace Akila.FPSFramework
                     }
                 }
             }
-
-            // var model = new ShootModel
-            // {
-            //     Id = client.id,
-            // };
-            //
-            // var bytes = WsProtocol.Pack(WsMessageType.Shoot, model);
-            // await client.websocket.Send(bytes);
+            
+            firearm.events?.OnHit?.Invoke(hit.transform, networkDamage);
             
             // Handle custom decals
             if (hit.transform.TryGetComponent(out CustomDecal customDecal))

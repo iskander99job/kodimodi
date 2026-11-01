@@ -27,7 +27,7 @@ namespace Akila.FPSFramework
         [Tooltip("Action to be invoked when FireMode state is changed.")]
         public UnityEvent OnFireModeChange;
         [Tooltip("Action to be invoked when hit")]
-        public UnityEvent OnHit;
+        public UnityEvent<Transform, float> OnHit;
 
         ///TODO: Add these events
         ///OnAim

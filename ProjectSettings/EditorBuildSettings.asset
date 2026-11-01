@@ -5,12 +5,15 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/TP/LoafbrrAssets/BackroomsLikeAssetRe/scenes/LevelTst.unity
     guid: a3f29f1950f6e5945a274cf7349d68b2
   - enabled: 0
     path: Assets/Scenes/R.unity
     guid: 50847033dc7ab46699636e1b172e7382
+  - enabled: 1
+    path: Assets/Scenes/ProfileScene.unity
+    guid: d443cd71844b84640ac1e3af808f30d6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: fe0ad163545f89b47813a7b41af4a66a,
       type: 3}

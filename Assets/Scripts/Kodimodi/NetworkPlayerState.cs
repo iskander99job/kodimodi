@@ -43,17 +43,6 @@ namespace Kodimodi
         {
             if (client == null || client.websocket == null) return;
             
-            // if (Input.GetMouseButtonDown(0))
-            // {
-            // var model = new ShootModel
-            // {
-            //     Id = client.id,
-            // };
-            //
-            //     var bytes = WsProtocol.Pack(WsMessageType.Shoot, model);
-            //     await client.websocket.Send(bytes);
-            // }
-            
             if (isSending || Time.time < nextSend) return;
             
             var pos = transform.position;

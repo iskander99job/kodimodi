@@ -7,6 +7,6 @@ namespace Kodimodi.Models
     {
         public int Id { get; set; }
         public int HitPlayerId { get; set; }
-        public int Damage { get; set; }
+        public float Damage { get; set; }
     }
 }

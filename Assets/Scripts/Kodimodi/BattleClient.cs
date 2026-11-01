@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Akila.FPSFramework;
 using Kodimodi.Models;
 using NativeWebSocket;
 using UnityEngine;
@@ -112,12 +113,14 @@ namespace Kodimodi
                     FindAnyObjectByType<Camera>().gameObject.SetActive(false);
                             
                     GameObject player = Instantiate(playerPrefab, pos, Quaternion.identity);
+                    player.GetComponent<NetworkPlayer>().playerId = s.Id;
                     player.name = "Player_" + s.Id;
                 }
                 else
                 {
                     GameObject player = Instantiate(enemyPrefab, pos, Quaternion.identity);
                     player.name = "Player_" + s.Id;
+                    player.GetComponent<NetworkPlayer>().playerId = s.Id;
                     spawned[s.Id] = player.GetComponent<RemotePlayerVisuals>();
                 }
             }
