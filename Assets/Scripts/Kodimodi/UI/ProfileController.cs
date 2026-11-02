@@ -1,4 +1,5 @@
 using System.Collections;
+using Lean.Gui;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,13 +9,14 @@ namespace Kodimodi.UI
     {
         public RawImage rawImage;
         public Image rawImageMask;
-    
+        public LeanWindow webcamWarningModal;
+        
         // Сохраняем ссылку на текстуру, чтобы иметь к ней доступ
         private WebCamTexture webcamTexture;
 
         void Start()
         {
-            StartCoroutine(EnableWebCam());
+            //StartCoroutine(EnableWebCam(true));
         }
         
         public void OnPlayButtonClick()
@@ -22,15 +24,14 @@ namespace Kodimodi.UI
             // Проверяем, идёт ли уже видео
             if (webcamTexture != null && webcamTexture.isPlaying)
             {
-                Debug.Log("Видео уже идёт.");
-                // Здесь можно, например, ничего не делать или переключить на паузу
                 return;
             }
-        
-            StartCoroutine(EnableWebCam());
+            
+            webcamWarningModal.TurnOn();
+            StartCoroutine(EnableWebCam(false));
         }
     
-        IEnumerator EnableWebCam()
+        IEnumerator EnableWebCam(bool start)
         {
             yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
             if (Application.HasUserAuthorization(UserAuthorization.WebCam)) {
@@ -53,9 +54,6 @@ namespace Kodimodi.UI
                 {
                     webcamTexture.Play();
                 }
-            
-                // Проверяем статус сразу после вызова Play()
-                Debug.Log("Камера запущена: " + webcamTexture.isPlaying);
             }
         }
     }
