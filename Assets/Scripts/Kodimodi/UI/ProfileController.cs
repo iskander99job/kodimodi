@@ -10,6 +10,7 @@ namespace Kodimodi.UI
         public RawImage rawImage;
         public Image rawImageMask;
         public LeanWindow webcamWarningModal;
+        public LeanWindow createMatchModal;
         
         // Сохраняем ссылку на текстуру, чтобы иметь к ней доступ
         private WebCamTexture webcamTexture;
@@ -21,14 +22,15 @@ namespace Kodimodi.UI
         
         public void OnPlayButtonClick()
         {
+            createMatchModal.TurnOn();
             // Проверяем, идёт ли уже видео
-            if (webcamTexture != null && webcamTexture.isPlaying)
-            {
-                return;
-            }
-            
-            webcamWarningModal.TurnOn();
-            StartCoroutine(EnableWebCam(false));
+            // if (webcamTexture != null && webcamTexture.isPlaying)
+            // {
+            //     return;
+            // }
+            //
+            // webcamWarningModal.TurnOn();
+            // StartCoroutine(EnableWebCam(false));
         }
     
         IEnumerator EnableWebCam(bool start)
