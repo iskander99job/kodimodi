@@ -7,17 +7,35 @@ namespace Kodimodi.UI
     {
         public TMP_Text matchInfoTextUI;
         private int playersCount = 2;
+        public GameObject searchMatchScrollViewItemPrefabUI;
+        public GameObject searchMatchScrollViewUI;
+        public TMP_InputField matchLinkUI;
+        public GameObject startMatchBtnUI;
+        public GameObject createMatchModal, searchMatchModal;
         
         void Start()
         {
-        
+            SwitchModal("create");
         }
 
+        private void SwitchModal(string name)
+        {
+            if (name == "create")
+            {
+                createMatchModal.SetActive(true);
+                searchMatchModal.SetActive(false);
+            } else if (name == "search")
+            {
+                createMatchModal.SetActive(false);
+                searchMatchModal.SetActive(true);
+            }
+        }
+        
         public void OnCreateMatch()
         {
             if (playersCount >= 2)
             {
-                
+                SwitchModal("search");
             }
         }
 
@@ -44,6 +62,21 @@ namespace Kodimodi.UI
             matchInfoTextUI.text = 
                 "<b>Режим:</b> каждый сам за себя\n" +
                 $"<b>Кол-во игроков:</b> {playersCount}";
+        }
+
+        public void OnCopyMatchLink()
+        {
+            FindAnyObjectByType<ClipboardManager>().CopyToClipboard(matchLinkUI.text);
+        }
+
+        public void OnCancelMatchSearch()
+        {
+            
+        }
+
+        public void OnStartMatch()
+        {
+            
         }
     }
 }
