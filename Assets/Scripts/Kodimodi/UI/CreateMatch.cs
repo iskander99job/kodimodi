@@ -10,7 +10,7 @@ namespace Kodimodi.UI
         public GameObject searchMatchScrollViewItemPrefabUI;
         public GameObject searchMatchScrollViewUI;
         public TMP_InputField matchLinkUI;
-        public GameObject startMatchBtnUI;
+        public GameObject cancelMatchBtnUI, startMatchBtnUI;
         public GameObject createMatchModal, searchMatchModal;
         
         void Start()
@@ -77,6 +77,12 @@ namespace Kodimodi.UI
         public void OnStartMatch()
         {
             
+        }
+
+        private void HideButtons()
+        {
+            startMatchBtnUI.SetActive(false);
+            cancelMatchBtnUI.SetActive(false);
         }
     }
 }

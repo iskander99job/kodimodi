@@ -1188,6 +1188,7 @@ MonoBehaviour:
     type: 3}
   searchMatchScrollViewUI: {fileID: 1101478491}
   matchLinkUI: {fileID: 1231475694}
+  cancelMatchBtnUI: {fileID: 1776850940}
   startMatchBtnUI: {fileID: 1736496937}
   createMatchModal: {fileID: 830628177}
   searchMatchModal: {fileID: 1271425480}
@@ -4013,8 +4014,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 2, y: -43}
-  m_SizeDelta: {x: 272.2523, y: 50}
+  m_AnchoredPosition: {x: -0.7, y: -43}
+  m_SizeDelta: {x: 351.2685, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1152889627
 MonoBehaviour:
@@ -4036,7 +4037,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u0416\u0434\u0435\u043C \u0438\u0433\u0440\u043E\u043A\u043E\u0432..."
+  m_text: "\u041E\u0436\u0438\u0434\u0430\u043D\u0438\u0435 \u0438\u0433\u0440\u043E\u043A\u043E\u0432..."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6180,8 +6181,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -83.64002, y: -114.6}
-  m_SizeDelta: {x: 230.92, y: 21.0274}
+  m_AnchoredPosition: {x: -43.692924, y: -120.7457}
+  m_SizeDelta: {x: 310.8142, y: 33.3188}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1613965767
 MonoBehaviour:
@@ -6204,7 +6205,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "\u0421\u0441\u044B\u043B\u043A\u0443 \u043E\u0442\u043F\u0440\u0430\u0432\u044C
-    \u0434\u0440\u0443\u0437\u044C\u044F\u043C"
+    \u0434\u0440\u0443\u0437\u044C\u044F\u043C\n\u041C\u0430\u0442\u0447 \u043C\u043E\u0436\u043D\u043E
+    \u043D\u0430\u0447\u0430\u0442\u044C \u0431\u0435\u0437 \u043F\u043E\u043B\u043D\u043E\u0433\u043E
+    \u043D\u0430\u0431\u043E\u0440\u0430 \u0438\u0433\u0440\u043E\u043A\u043E\u0432"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
