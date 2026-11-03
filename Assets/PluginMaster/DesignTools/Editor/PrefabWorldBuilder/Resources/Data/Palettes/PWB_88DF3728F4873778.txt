@@ -5,7 +5,7 @@
     "_hexId": "88DF3728F4873778",
     "_brushes": [
         {
-            "_id": 639292994857132340,
+            "_id": 639293232266199290,
             "_surfaceDistance": 0.0,
             "_randomSurfaceDistance": false,
             "_randomSurfaceDistanceRange": {
@@ -110,10 +110,10 @@
                 },
                 "_useCustomImage": false
             },
-            "_name": "Door_2_Black",
+            "_name": "Door_1_White",
             "_items": [
                 {
-                    "_id": 639292994857133670,
+                    "_id": 639293232266199340,
                     "_surfaceDistance": 0.0,
                     "_randomSurfaceDistance": false,
                     "_randomSurfaceDistanceRange": {
@@ -219,10 +219,10 @@
                         "_useCustomImage": false
                     },
                     "_overwriteSettings": false,
-                    "_guid": "9c59c2406d1634839b55f674699bc834",
-                    "_prefabPath": "Assets/Prefab/Door_2_Black.prefab",
+                    "_guid": "35ca5007b9b280f4f93ae97058146c54",
+                    "_prefabPath": "Assets/TP/Free Wood Door Pack/Prefab/Wood/Door_1/Door_1_White.prefab",
                     "_frequency": 1.0,
-                    "_parentId": 639292994857132340,
+                    "_parentId": 639293232266199290,
                     "_overwriteThumbnailSettings": false,
                     "_includeInThumbnail": true,
                     "_isAsset2D": false
@@ -375,6 +375,6 @@
             "_useCustomImage": false
         }
     },
-    "_hashCode": 1994928522,
+    "_hashCode": -600413654,
     "_isPinned": false
 }
