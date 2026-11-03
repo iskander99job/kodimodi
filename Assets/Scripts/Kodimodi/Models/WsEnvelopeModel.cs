@@ -11,9 +11,17 @@ namespace Kodimodi.Models
     
     public enum WsMessageType : byte
     {
+        // /battle
         BattlePingRequest = 1,
         BattlePingResponse = 2,
         PlayerBodyPosition = 3,
-        Shoot = 4
+        Shoot = 4,
+        // /lobby
+        LobbyJoin = 5,    // клиент → сервер
+        LobbyState = 6,   // сервер → все
+        StartMatch = 7,   // хост → сервер
+        CancelMatch = 8,  // хост → сервер
+        RoomClosed = 9,   // сервер → все, также причина отказа при входе
+        MatchStarted = 10 // сервер → все
     }
 }

@@ -5,7 +5,7 @@
     "_hexId": "88DF3728F4873778",
     "_brushes": [
         {
-            "_id": 639290438593182540,
+            "_id": 639292994857132340,
             "_surfaceDistance": 0.0,
             "_randomSurfaceDistance": false,
             "_randomSurfaceDistanceRange": {
@@ -110,10 +110,10 @@
                 },
                 "_useCustomImage": false
             },
-            "_name": "WallDoor",
+            "_name": "Door_2_Black",
             "_items": [
                 {
-                    "_id": 639290438593182570,
+                    "_id": 639292994857133670,
                     "_surfaceDistance": 0.0,
                     "_randomSurfaceDistance": false,
                     "_randomSurfaceDistanceRange": {
@@ -219,10 +219,10 @@
                         "_useCustomImage": false
                     },
                     "_overwriteSettings": false,
-                    "_guid": "bef7c1f55373f40568aa593202ea62bc",
-                    "_prefabPath": "Assets/Prefab/WallDoor.prefab",
+                    "_guid": "9c59c2406d1634839b55f674699bc834",
+                    "_prefabPath": "Assets/Prefab/Door_2_Black.prefab",
                     "_frequency": 1.0,
-                    "_parentId": 639290438593182540,
+                    "_parentId": 639292994857132340,
                     "_overwriteThumbnailSettings": false,
                     "_includeInThumbnail": true,
                     "_isAsset2D": false
@@ -375,6 +375,6 @@
             "_useCustomImage": false
         }
     },
-    "_hashCode": -886051490,
+    "_hashCode": 1994928522,
     "_isPinned": false
 }

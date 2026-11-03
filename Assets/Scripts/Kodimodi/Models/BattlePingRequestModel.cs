@@ -6,5 +6,6 @@ namespace Kodimodi.Models
     public partial class BattlePingRequestModel
     {
         public int id;
+        public string RoomId { get; set; }
     }
 }
