@@ -9,6 +9,7 @@ namespace Kodimodi.UI
         public GameObject statisticScrollViewItemPrefab, statisticScrollViewLocalItemPrefab;
         
         public LeanWindow statisticFinishedPopup;
+        public LeanWindow finishedTextPopup;
         
         //Вызывается когда матч закончился и игрок нажимает на кнопку чтобы перейти на главную сцену
         public void OnStatisticFinishedHomeBtnClick()
