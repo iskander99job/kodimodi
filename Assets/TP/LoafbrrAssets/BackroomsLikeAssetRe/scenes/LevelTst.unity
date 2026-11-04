@@ -2505,30 +2505,13 @@ GameObject:
   - component: {fileID: 596665844}
   - component: {fileID: 596665843}
   - component: {fileID: 596665842}
-  - component: {fileID: 596665841}
   m_Layer: 5
-  m_Name: Canvas_1
+  m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &596665841
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 596665840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1a9f44df99ea4ffc979d76ca1202b87, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ProfileController
-  rawImage: {fileID: 0}
-  rawImageMask: {fileID: 0}
-  webcamWarningModal: {fileID: 0}
-  createMatchModal: {fileID: 48108492}
 --- !u!114 &596665842
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6981,7 +6964,7 @@ MonoBehaviour:
   onClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 596665841}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ProfileController, Assembly-CSharp
         m_MethodName: OnPlayButtonClick
         m_Mode: 1
