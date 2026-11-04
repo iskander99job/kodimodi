@@ -3,6 +3,7 @@ using MemoryPack;
 
 namespace Kodimodi.Models
 {
+    [MemoryPackable]
     public partial class BattlePingResponseModel
     {
         public SpawnInfo[] Spawns { get; set; } = Array.Empty<SpawnInfo>();

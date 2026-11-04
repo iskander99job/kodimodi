@@ -6,7 +6,9 @@ using Lean.Gui;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
 
 namespace Kodimodi.UI
 {
@@ -55,6 +57,7 @@ namespace Kodimodi.UI
         private const int MinToStart = 2;
         private static readonly Color StartDisabledColor = new Color32(0x5B, 0x58, 0x58, 0xFF); // #5B5858
         private static readonly Color StartEnabledColor = Color.black;
+        private const string MatchSceneName = "LevelTst";
 
         private void OnEnable()
         {
@@ -209,8 +212,13 @@ namespace Kodimodi.UI
         {
             MatchSession.RoomId = m.RoomId;
             MatchSession.PlayerId = m.PlayerId;
-            Debug.Log($"Матч начался. Комната {m.RoomId}, ваш id {m.PlayerId}");
-            // TODO: загрузить сцену и подключиться к /battle
+
+            // пока грузится сцена, блокируем кнопки и показываем спиннер
+            startMatchBtnUI.SetActive(false);
+            cancelMatchBtnUI.SetActive(false);
+            SetSpinner(searchMatchModalSpinner, true);
+
+            SceneManager.LoadSceneAsync(MatchSceneName);
         }
 
         private void OnLobbyClosed(string reason)

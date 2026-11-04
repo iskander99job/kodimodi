@@ -101,7 +101,7 @@ namespace Kodimodi
             finished = true;
             var old = ws;
             ws = null;
-            _ = old.Close();
+            SafeClose(old);
         }
 
         private void Update()
@@ -112,5 +112,18 @@ namespace Kodimodi
         }
 
         private void OnDestroy() => Disconnect();
+        
+        private static async void SafeClose(WebSocket socket)
+        {
+            try
+            {
+                if (socket != null && socket.State == WebSocketState.Open)
+                    await socket.Close();
+            }
+            catch
+            {
+                // сокет уже закрыт, ничего делать не нужно
+            }
+        }
     }
 }
