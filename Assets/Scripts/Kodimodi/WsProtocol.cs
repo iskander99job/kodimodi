@@ -15,6 +15,13 @@ namespace Kodimodi
             return MemoryPackSerializer.Serialize(envelope);
         }
 
+        public static byte[] Pack(WsMessageType type)
+            => MemoryPackSerializer.Serialize(new WsEnvelopeModel
+            {
+                Type = type,
+                Payload = System.Array.Empty<byte>()
+            });
+
         public static WsEnvelopeModel Unpack(byte[] data)
             => MemoryPackSerializer.Deserialize<WsEnvelopeModel>(data)!;
 

@@ -526,9 +526,9 @@ RectTransform:
   m_Father: {fileID: 804710618}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 20}
+  m_SizeDelta: {x: -17, y: 20}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &89119008
 MonoBehaviour:
@@ -573,7 +573,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 773155893}
   m_HandleRect: {fileID: 773155892}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1057,7 +1057,7 @@ MonoBehaviour:
   onNonInteractable:
     m_PersistentCalls:
       m_Calls: []
-  expectedInteractable: 1
+  expectedInteractable: 0
   requiredButtons: -1
   multiDown: 0
   dragThreshold: 10
@@ -1239,7 +1239,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4fd146527b61614a96da3a84e74ad78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  on: 1
+  on: 0
   turnOffSiblings: 0
   onTransitions:
     speed: 5
@@ -1309,9 +1309,9 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 222799717}
   m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
 --- !u!114 &222799721
 MonoBehaviour:
@@ -1332,9 +1332,14 @@ MonoBehaviour:
   matchLinkUI: {fileID: 1231475694}
   cancelMatchBtnUI: {fileID: 1776850940}
   startMatchBtnUI: {fileID: 1736496937}
+  startMatchCapUI: {fileID: 381907783}
   createMatchModal: {fileID: 830628177}
   searchMatchModal: {fileID: 1271425480}
   modal: {fileID: 222799718}
+  createMatchModalSpinner: {fileID: 2100202196}
+  searchMatchModalSpinner: {fileID: 47009064}
+  lobby: {fileID: 1271425482}
+  nickname: Player
   editorTestUrl: 
 --- !u!1 &254626535
 GameObject:
@@ -2937,7 +2942,7 @@ RectTransform:
   m_Father: {fileID: 1325697523}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3250,7 +3255,7 @@ RectTransform:
   m_GameObject: {fileID: 830628177}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0.01, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1563466407}
@@ -3552,7 +3557,7 @@ MonoBehaviour:
   onNonInteractable:
     m_PersistentCalls:
       m_Calls: []
-  expectedInteractable: 1
+  expectedInteractable: 0
   requiredButtons: -1
   multiDown: 0
   dragThreshold: 10
@@ -4008,7 +4013,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 10}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1101478493
 MonoBehaviour:
@@ -4297,9 +4302,9 @@ RectTransform:
   m_Father: {fileID: 804710618}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -17, y: -17}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1154917034
 MonoBehaviour:
@@ -5083,13 +5088,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1271425481}
+  - component: {fileID: 1271425482}
   m_Layer: 5
   m_Name: Search
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1271425481
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5119,6 +5125,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 682, y: 437.9}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1271425482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1271425480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01def4c7b4c4a492ea9c39be65f1ccdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.LobbyClient
 --- !u!1 &1316322059
 GameObject:
   m_ObjectHideFlags: 0
@@ -6466,7 +6484,7 @@ RectTransform:
   m_Father: {fileID: 1438906453}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6981,7 +6999,7 @@ MonoBehaviour:
   onNonInteractable:
     m_PersistentCalls:
       m_Calls: []
-  expectedInteractable: 1
+  expectedInteractable: 0
   requiredButtons: -1
   multiDown: 0
   dragThreshold: 10
@@ -7140,9 +7158,9 @@ RectTransform:
   m_Father: {fileID: 804710618}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 20, y: 0}
+  m_SizeDelta: {x: 20, y: -17}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &1788204837
 MonoBehaviour:
@@ -7743,7 +7761,7 @@ MonoBehaviour:
   onNonInteractable:
     m_PersistentCalls:
       m_Calls: []
-  expectedInteractable: 1
+  expectedInteractable: 0
   requiredButtons: -1
   multiDown: 0
   dragThreshold: 10
