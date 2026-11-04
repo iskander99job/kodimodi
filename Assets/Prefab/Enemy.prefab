@@ -796,7 +796,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac5a991171713d54e95b559072f9cf5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Akila.FPSFramework::Akila.FPSFramework.Damageable
-  type: 0
+  type: 2
   health: 100
   destroyDelay: 0
   damageCameraShake: 0.3

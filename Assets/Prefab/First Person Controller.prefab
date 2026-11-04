@@ -994,6 +994,7 @@ GameObject:
   - component: {fileID: 8182431768515220467}
   - component: {fileID: 8495717242077504531}
   - component: {fileID: -1839973448790412683}
+  - component: {fileID: 2276504309105570090}
   m_Layer: 8
   m_Name: First Person Controller
   m_TagString: Player
@@ -1338,6 +1339,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.NetworkPlayer
   playerId: 0
+--- !u!114 &2276504309105570090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1519116242783462850}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac5a991171713d54e95b559072f9cf5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Akila.FPSFramework::Akila.FPSFramework.Damageable
+  type: 0
+  health: 100
+  destroyDelay: 0
+  damageCameraShake: 0.3
+  destroyOnDeath: 0
+  destroyRoot: 0
+  ragdolls: 0
+  deathEffect: {fileID: 0}
+  autoHeal: 0
+  regenerationRate: 10
+  autoHealDelay: 1
+  onDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onTryToHeal:
+    m_PersistentCalls:
+      m_Calls: []
+  onRespawn:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2382363374517761905
 GameObject:
   m_ObjectHideFlags: 0
@@ -2084,7 +2117,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 19.155, y: -20.55}
+  m_AnchoredPosition: {x: 19.155, y: -4}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1503514693544876168

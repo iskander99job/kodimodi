@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Akila.FPSFramework;
 using Kodimodi.Models;
 using NativeWebSocket;
 using UnityEngine;
@@ -19,7 +20,7 @@ namespace Kodimodi
         public WebSocket websocket;
         public int id;
         public string livekitToken;
-
+        private Damageable localDamageable;
         public static BattleClient Instance { get; private set; }
 
         private void Awake()
@@ -119,6 +120,7 @@ namespace Kodimodi
                     GameObject player = Instantiate(playerPrefab, pos, Quaternion.identity);
                     player.GetComponent<NetworkPlayer>().playerId = s.Id;
                     player.name = "Player_" + s.Id;
+                    localDamageable = player.GetComponentInChildren<Damageable>();
                 }
                 else
                 {
@@ -135,16 +137,17 @@ namespace Kodimodi
         private void HandleShoot(WsEnvelopeModel model)
         {
             var resp = WsProtocol.UnpackPayload<ShootModel>(model);
-
             if (resp.Id == id) return;
 
-            if (!spawned.TryGetValue(resp.Id, out var t) || t == null)
-            {
-                Debug.LogWarning($"No spawned object for id {resp.Id}");
-                return;
-            }
+            spawned.TryGetValue(resp.Id, out var shooter);
 
-            t.Shoot();
+            // попали в меня: урон применяю у себя
+            if (resp.Damage > 0f && resp.HitPlayerId == id && localDamageable != null)
+                localDamageable.Damage(resp.Damage, shooter != null ? shooter.gameObject : null);
+
+            // просто выстрел: анимация у стрелявшего
+            if (resp.Damage <= 0f && shooter != null)
+                shooter.Shoot();
         }
 
         void Update()
