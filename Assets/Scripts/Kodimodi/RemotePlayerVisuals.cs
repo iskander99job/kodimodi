@@ -1,3 +1,4 @@
+using Akila.FPSFramework;
 using Kodimodi.Models;
 using UnityEngine;
 
@@ -8,7 +9,8 @@ namespace Kodimodi
         [SerializeField] private Animator animator;
         [SerializeField] private float positionLerp = 15f;
         [SerializeField] private float rotationLerp = 15f;
-
+        
+        private Damageable damageable;
         private Vector3 targetPos;
         private Quaternion targetRot;
         private Vector3 lastPacketPos; // запоминаем позицию из прошлого пакета
@@ -23,6 +25,7 @@ namespace Kodimodi
         private void Awake()
         {
             if (animator == null) animator = GetComponentInChildren<Animator>();
+            damageable = GetComponent<Damageable>();
         }
 
         public void Shoot()
@@ -78,6 +81,29 @@ namespace Kodimodi
             // Плавно двигаемся к цели
             transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * positionLerp);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationLerp);
+        }
+        
+        public void SetHealth(float value)
+        {
+            if (damageable != null) damageable.health = value;
+        }
+
+        // мёртвый игрок исчезает: нет модели и нет коллайдеров, пули летят сквозь
+        public void SetAlive(bool alive)
+        {
+            foreach (var r in GetComponentsInChildren<Renderer>(true)) r.enabled = alive;
+            foreach (var c in GetComponentsInChildren<Collider>(true)) c.enabled = alive;
+        }
+
+        public void OnRemoteRespawn(Vector3 position)
+        {
+            transform.position = position;   // сразу, без плавного движения через карту
+            targetPos = position;
+            lastPacketPos = position;
+            initialized = true;
+
+            if (damageable != null) damageable.ResetForRespawn();
+            SetAlive(true);
         }
     }
 }

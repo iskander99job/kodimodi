@@ -657,7 +657,6 @@ GameObject:
   - component: {fileID: 5925132995873101350}
   - component: {fileID: 5030458936573331437}
   - component: {fileID: 1402328456039637347}
-  - component: {fileID: 3738012367524230159}
   - component: {fileID: 1435965183961660542}
   - component: {fileID: 17275866679891654}
   m_Layer: 0
@@ -772,18 +771,6 @@ MonoBehaviour:
   animator: {fileID: 2349059972581977457}
   positionLerp: 15
   rotationLerp: 15
---- !u!114 &3738012367524230159
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1466188265552503313}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4472934d337844618940b459ae6f3d69, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
 --- !u!114 &1435965183961660542
 MonoBehaviour:
   m_ObjectHideFlags: 0

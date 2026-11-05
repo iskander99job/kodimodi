@@ -214,17 +214,18 @@ namespace Akila.FPSFramework
             // Activate the selected item by index, deactivate the others
             for (int i = 0; i < items.Count; i++)
             {
-                //Сам добавил
                 items[i].gameObject.SetActive(i == index);
 
                 if (i == index)
                 {
-                    if (transform.root.gameObject.GetComponent<Actor>().isLocalPlayer)
-                    {
-                        items[i].gameObject.GetComponent<Firearm>().enabled = true;
-                        items[i].gameObject.GetComponent<FirearmAttachmentsManager>().enabled = true;
-                        items[i].gameObject.GetComponent<ItemInput>().enabled = true;   
-                    }
+                    var firearm = items[i].GetComponent<Firearm>();
+                    if (firearm) firearm.enabled = true;
+
+                    var attachments = items[i].GetComponent<FirearmAttachmentsManager>();
+                    if (attachments) attachments.enabled = true;
+
+                    var itemInput = items[i].GetComponent<ItemInput>();
+                    if (itemInput) itemInput.enabled = true;
                 }
             }
         }

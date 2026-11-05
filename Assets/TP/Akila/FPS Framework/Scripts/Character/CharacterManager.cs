@@ -22,11 +22,6 @@ namespace Akila.FPSFramework
         public UnityEvent onLand = new UnityEvent();
 
         /// <summary>
-        /// The Actor component attached to this character.
-        /// </summary>
-        public IActor actor { get; protected set; }
-
-        /// <summary>
         /// The CharacterInput component responsible for user input.
         /// </summary>
         public CharacterInput characterInput { get; protected set; }
@@ -82,12 +77,10 @@ namespace Akila.FPSFramework
         private void Start()
         {
             character = GetComponent<ICharacterController>();
-            actor = GetComponent<IActor>();
             characterInput = GetComponent<CharacterInput>();
             cameraManager = this.SearchFor<CameraManager>();
 
             if (character == null) Debug.LogError("CharacterManager: ICharacterController not found.");
-            if (actor == null) Debug.LogWarning("CharacterManager: Actor not found.");
             if (cameraManager == null) Debug.LogWarning("CharacterManager: CameraManager not found in hierarchy.");
         }
 

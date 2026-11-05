@@ -295,7 +295,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 66.32, y: -18.42775}
-  m_SizeDelta: {x: 0, y: 28.8555}
+  m_SizeDelta: {x: 54.02, y: 28.8555}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6898729532976199280
 CanvasRenderer:
@@ -827,7 +827,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 15.155001, y: -16.55}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 10.31, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9047674009782951933
 CanvasRenderer:
@@ -984,17 +984,15 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3761635600454242045}
-  - component: {fileID: 4165449483028940978}
   - component: {fileID: 2989076923050661995}
   - component: {fileID: 2374307988459447293}
   - component: {fileID: 6690972598176633872}
   - component: {fileID: 981399253390347182}
-  - component: {fileID: 1683176608378619467}
-  - component: {fileID: 7095538475065031449}
   - component: {fileID: 8182431768515220467}
   - component: {fileID: 8495717242077504531}
   - component: {fileID: -1839973448790412683}
   - component: {fileID: 2276504309105570090}
+  - component: {fileID: 9057661136990281558}
   m_Layer: 8
   m_Name: First Person Controller
   m_TagString: Player
@@ -1020,25 +1018,6 @@ Transform:
   - {fileID: 8513430051688504565}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4165449483028940978
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519116242783462850}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 99204d50a49bbab478a86d0c9cd2c92f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  actorName: Player
-  isLocalPlayer: 0
-  type: Player
-  teamId: 0
-  respawnable: 1
-  kills: 0
-  deaths: 0
 --- !u!114 &2989076923050661995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1260,42 +1239,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &1683176608378619467
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519116242783462850}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad55d4247f8ab40408f6d8b05829b12e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxDistance: 50
-  assistRadius: 50
-  deadZone: 5
-  assistStrength: 15
-  smoothing: 15
-  alwaysOn: 0
-  assistWhenMoving: 1
-  assistOnStartAim: 1
-  assistWhileAiming: 0
-  assistForKeyboardMouse: 0
-  assistForGamepad: 1
-  assistForMobile: 0
---- !u!114 &7095538475065031449
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1519116242783462850}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d16a2ae80e48fc43a0b2618dfc3ae08, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &8182431768515220467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1371,6 +1314,18 @@ MonoBehaviour:
   onRespawn:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9057661136990281558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1519116242783462850}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4f9099cd71e947f0b91b46aeb490c45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.NetworkRespawn
 --- !u!1 &2382363374517761905
 GameObject:
   m_ObjectHideFlags: 0

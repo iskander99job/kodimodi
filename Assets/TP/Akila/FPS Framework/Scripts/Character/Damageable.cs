@@ -309,6 +309,18 @@ namespace Akila.FPSFramework
             UIManager.Instance?.DamagableVisualizer?.TriggerDamageEffect();
         }
 
+        public void ResetForRespawn()
+        {
+            health = maxHealth;
+            previousHealth = health;
+            died = false;
+            DeadConfirmed = false;
+            isHealing = false;
+            previoslyHealing = false;
+            autoHealDelayTime = 0;
+            DamageSource = null;
+        }
+        
         private void Die()
         {
             if (isDamagableDisabled) return;
@@ -316,7 +328,7 @@ namespace Akila.FPSFramework
             if (destroyOnDeath && !destroyRoot) Destroy(gameObject, destroyDelay);
             if (destroyOnDeath && destroyRoot) Destroy(gameObject.transform.parent.gameObject, destroyDelay);
 
-            if (died == false) Respawn();
+            DeadConfirmed = true;
 
             if (ragdoll) ragdoll.Enable();
 

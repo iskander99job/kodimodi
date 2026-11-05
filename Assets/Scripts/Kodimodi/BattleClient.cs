@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Akila.FPSFramework;
 using Kodimodi.Models;
@@ -22,6 +23,12 @@ namespace Kodimodi
         public string livekitToken;
         private Damageable localDamageable;
         public static BattleClient Instance { get; private set; }
+        
+        public event Action<ScoreboardModel> ScoreboardUpdated;
+        public event Action<MatchEndedModel> MatchEnded;
+        public event Action<int, int> PlayerKilled;   // victimId, killerId
+        
+        private NetworkRespawn localRespawn;
 
         private void Awake()
         {
@@ -37,6 +44,8 @@ namespace Kodimodi
         async void Start()
         {
             if (Instance != this) return;
+            
+            ScoreboardUpdated += b => Debug.Log($"Убил {b.KillerId}, погиб {b.VictimId}");
             
             // id и комнату выдал сервер при старте матча (см. MatchStarted)
             if (string.IsNullOrEmpty(MatchSession.RoomId))
@@ -66,15 +75,23 @@ namespace Kodimodi
             websocket.OnMessage += bytes =>
             {
                 WsEnvelopeModel model = WsProtocol.Unpack(bytes);
-            
-                if (model.Type == WsMessageType.BattlePingResponse)
-                    HandleSpawn(model);
-            
-                if (model.Type == WsMessageType.PlayerBodyPosition)
-                    HandleBodyPosition(model);
-            
-                if (model.Type == WsMessageType.Shoot)
-                    HandleShoot(model);
+
+                switch (model.Type)
+                {
+                    case WsMessageType.BattlePingResponse: HandleSpawn(model); break;
+                    case WsMessageType.PlayerBodyPosition: HandleBodyPosition(model); break;
+                    case WsMessageType.Shoot: HandleShoot(model); break;
+                    case WsMessageType.PlayerHealth:
+                        HandleHealth(WsProtocol.UnpackPayload<PlayerHealthModel>(model)); break;
+                    case WsMessageType.PlayerDied:
+                        HandleDied(WsProtocol.UnpackPayload<PlayerDiedModel>(model)); break;
+                    case WsMessageType.PlayerRespawned:
+                        HandleRespawned(WsProtocol.UnpackPayload<PlayerRespawnedModel>(model)); break;
+                    case WsMessageType.Scoreboard:
+                        ScoreboardUpdated?.Invoke(WsProtocol.UnpackPayload<ScoreboardModel>(model)); break;
+                    case WsMessageType.MatchEnded:
+                        HandleMatchEnded(WsProtocol.UnpackPayload<MatchEndedModel>(model)); break;
+                }
             };
             
             await websocket.Connect();
@@ -120,7 +137,8 @@ namespace Kodimodi
                     GameObject player = Instantiate(playerPrefab, pos, Quaternion.identity);
                     player.GetComponent<NetworkPlayer>().playerId = s.Id;
                     player.name = "Player_" + s.Id;
-                    localDamageable = player.GetComponentInChildren<Damageable>();
+                    localDamageable = player.GetComponent<Damageable>();
+                    localRespawn = player.GetComponent<NetworkRespawn>();
                 }
                 else
                 {
@@ -139,15 +157,46 @@ namespace Kodimodi
             var resp = WsProtocol.UnpackPayload<ShootModel>(model);
             if (resp.Id == id) return;
 
-            spawned.TryGetValue(resp.Id, out var shooter);
-
-            // попали в меня: урон применяю у себя
-            if (resp.Damage > 0f && resp.HitPlayerId == id && localDamageable != null)
-                localDamageable.Damage(resp.Damage, shooter != null ? shooter.gameObject : null);
-
-            // просто выстрел: анимация у стрелявшего
-            if (resp.Damage <= 0f && shooter != null)
+            if (spawned.TryGetValue(resp.Id, out var shooter) && shooter != null)
                 shooter.Shoot();
+        }
+
+        private void HandleHealth(PlayerHealthModel m)
+        {
+            if (m.Id == id)
+            {
+                if (localDamageable != null) localDamageable.health = m.Health;
+                return;
+            }
+
+            if (spawned.TryGetValue(m.Id, out var v) && v != null) v.SetHealth(m.Health);
+        }
+
+        private void HandleDied(PlayerDiedModel m)
+        {
+            if (m.VictimId != id && spawned.TryGetValue(m.VictimId, out var v) && v != null)
+                v.SetAlive(false);
+
+            PlayerKilled?.Invoke(m.VictimId, m.KillerId);
+        }
+
+        private void HandleRespawned(PlayerRespawnedModel m)
+        {
+            var pos = new Vector3(m.Position.X, m.Position.Y, m.Position.Z);
+
+            if (m.Id == id)
+            {
+                if (localRespawn != null) localRespawn.Respawn(pos);
+                return;
+            }
+
+            if (spawned.TryGetValue(m.Id, out var v) && v != null) v.OnRemoteRespawn(pos);
+        }
+
+        private void HandleMatchEnded(MatchEndedModel m)
+        {
+            FPSFrameworkCore.IsInputActive = false;
+            MatchEnded?.Invoke(m);
         }
 
         void Update()
