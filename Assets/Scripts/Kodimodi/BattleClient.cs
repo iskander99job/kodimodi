@@ -216,5 +216,22 @@ namespace Kodimodi
         {
             if (websocket != null) await websocket.Close();
         }
+        
+        public void Leave()
+        {
+            var socket = websocket;
+            websocket = null;
+            SafeClose(socket);
+        }
+
+        private static async void SafeClose(WebSocket socket)
+        {
+            try
+            {
+                if (socket != null && socket.State == WebSocketState.Open)
+                    await socket.Close();
+            }
+            catch { /* уже закрыт */ }
+        }
     }
 }

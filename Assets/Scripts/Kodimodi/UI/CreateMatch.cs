@@ -79,7 +79,8 @@ namespace Kodimodi.UI
             SetSpinner(searchMatchModalSpinner, false);
             UpdateMatchInfoText();
 
-            RoomCode = RoomLinkChecker.GetRoomCode(editorTestUrl);
+            RoomCode = MatchSession.LinkHandled ? null : RoomLinkChecker.GetRoomCode(editorTestUrl);
+            MatchSession.LinkHandled = true;
 
             if (RoomCode != null)
             {
@@ -210,6 +211,8 @@ namespace Kodimodi.UI
 
         private void OnMatchStarted(MatchStartedModel m)
         {
+            BrowserUrl.ClearRoomParam();
+            
             MatchSession.RoomId = m.RoomId;
             MatchSession.PlayerId = m.PlayerId;
 
@@ -228,8 +231,10 @@ namespace Kodimodi.UI
             ResetToCreate();
         }
 
-        private void ResetToCreate()
+        private void ResetToCreate()         
         {
+            BrowserUrl.ClearRoomParam();
+            
             RoomCode = null;
             HostToken = null;
             IsHost = false;
