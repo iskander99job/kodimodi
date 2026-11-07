@@ -59,6 +59,10 @@ namespace Kodimodi.UI
         private static readonly Color StartEnabledColor = Color.black;
         private const string MatchSceneName = "LevelTst";
 
+        [Header("Закрытие лобби")]
+        [SerializeField] private LeanWindow lobbyClosedPopup;
+        [SerializeField] private TMP_Text lobbyClosedText;
+        
         private void OnEnable()
         {
             lobby.StateReceived += OnLobbyState;
@@ -215,6 +219,7 @@ namespace Kodimodi.UI
             
             MatchSession.RoomId = m.RoomId;
             MatchSession.PlayerId = m.PlayerId;
+            MatchSession.BattleToken = m.BattleToken;
 
             // пока грузится сцена, блокируем кнопки и показываем спиннер
             startMatchBtnUI.SetActive(false);
@@ -226,9 +231,17 @@ namespace Kodimodi.UI
 
         private void OnLobbyClosed(string reason)
         {
-            Debug.Log($"Лобби закрыто: {ReasonToText(reason)}");
-            // TODO: показать игроку сообщение
+            string message = ReasonToText(reason);
+
             ResetToCreate();
+
+            if (lobbyClosedText != null)
+                lobbyClosedText.text = message;
+
+            if (lobbyClosedPopup != null)
+                lobbyClosedPopup.TurnOn();
+            else
+                Debug.LogWarning(message);
         }
 
         private void ResetToCreate()         
@@ -317,8 +330,8 @@ namespace Kodimodi.UI
         private void UpdateMatchInfoText()
         {
             matchInfoTextUI.text =
-                "<b>Режим:</b> каждый сам за себя\n" +
-                $"<b>Кол-во игроков:</b> {playersCount}";
+                "<b>Mode:</b> every man for himself\n" +
+                $"<b>Number of players:</b> {playersCount}";
         }
 
         public void OnCopyMatchLink()

@@ -25,6 +25,13 @@ namespace Kodimodi
 
         public void Respawn(Vector3 position)
         {
+            if (BattleClient.Instance != null
+                && (BattleClient.Instance.IsMatchEnded
+                    || BattleClient.Instance.IsDisconnected))
+            {
+                return;
+            }
+            
             controller.enabled = false;               // иначе CharacterController перезапишет позицию
             transform.position = position;
             controller.enabled = true;

@@ -33,6 +33,7 @@ namespace Kodimodi.Models
     {
         public string RoomId { get; set; }
         public int PlayerId { get; set; }
+        public string BattleToken { get; set; } = "";
     }
 
     [MemoryPackable]

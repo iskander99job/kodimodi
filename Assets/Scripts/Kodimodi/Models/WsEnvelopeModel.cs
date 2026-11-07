@@ -27,6 +27,10 @@ namespace Kodimodi.Models
         PlayerDied = 12,        // сервер → все
         PlayerRespawned = 13,   // сервер → все
         Scoreboard = 14,        // сервер → все
-        MatchEnded = 15         // сервер → все
+        MatchEnded = 15,
+        PlayerLeft = 16,
+        BattleClosed = 17,
+        BattleHeartbeat = 18,
+        BattleHeartbeatAck = 19
     }
 }

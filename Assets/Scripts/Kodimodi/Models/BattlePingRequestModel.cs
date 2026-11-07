@@ -7,5 +7,6 @@ namespace Kodimodi.Models
     {
         public int id;
         public string RoomId { get; set; }
+        public string BattleToken { get; set; } = "";
     }
 }

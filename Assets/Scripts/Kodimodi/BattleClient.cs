@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using Akila.FPSFramework;
 using Kodimodi.Models;
+using Lean.Gui;
 using NativeWebSocket;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -29,6 +31,41 @@ namespace Kodimodi
         public event Action<int, int> PlayerKilled;   // victimId, killerId
         
         private NetworkRespawn localRespawn;
+        public bool IsMatchEnded { get; private set; }
+        
+        public bool IsDisconnected { get; private set; }
+        public string DisconnectReason { get; private set; }
+
+        public event Action<string> BattleDisconnected;
+
+        private readonly HashSet<int> departedPlayerIds = new();
+        
+        [Header("Потеря соединения")]
+        [SerializeField] private LeanWindow connectionLostPopup;
+        public IReadOnlyCollection<int> DepartedPlayerIds =>
+            departedPlayerIds;
+
+        private bool leaving;
+        private bool opened;
+        private bool battleReady;
+        private bool heartbeatSending;
+        private bool connectingStarted;
+
+        private float connectStartedAt;
+        private float openedAt;
+        private float lastReceivedAt;
+        private float nextHeartbeatAt;
+
+        public bool CanPlay =>
+            !IsMatchEnded
+            && !IsDisconnected
+            && !leaving
+            && localDamageable != null
+            && localDamageable.health > 0f;
+
+        public MatchEndedModel FinalResult { get; private set; }
+
+        private GameObject localPlayer;
 
         private void Awake()
         {
@@ -48,33 +85,68 @@ namespace Kodimodi
             ScoreboardUpdated += b => Debug.Log($"Убил {b.KillerId}, погиб {b.VictimId}");
             
             // id и комнату выдал сервер при старте матча (см. MatchStarted)
-            if (string.IsNullOrEmpty(MatchSession.RoomId))
+            if (string.IsNullOrEmpty(MatchSession.RoomId)
+                || string.IsNullOrEmpty(MatchSession.BattleToken))
             {
-                Debug.LogError("Нет данных матча. Запускайте игру из меню: создайте комнату и нажмите «Начать».");
+                FailConnection("no_session");
                 return;
             }
             
             id = MatchSession.PlayerId;
+            connectStartedAt = Time.realtimeSinceStartup;
+            connectingStarted = true;
             
             websocket = new WebSocket($"{ServerConfig.WsUrl}/battle");
             
             websocket.OnOpen += async () =>
             {
+                if (leaving || IsDisconnected) return;
+
+                opened = true;
+                openedAt = lastReceivedAt = Time.realtimeSinceStartup;
+                nextHeartbeatAt = openedAt + 5f;
+
                 var model = new BattlePingRequestModel
                 {
                     id = this.id,
-                    RoomId = MatchSession.RoomId
+                    RoomId = MatchSession.RoomId,
+                    BattleToken = MatchSession.BattleToken
                 };
-            
-                await websocket.Send(WsProtocol.Pack(WsMessageType.BattlePingRequest, model));
+
+                try
+                {
+                    await websocket.Send(
+                        WsProtocol.Pack(
+                            WsMessageType.BattlePingRequest,
+                            model));
+                }
+                catch
+                {
+                    FailConnection("connection_lost");
+                }
             };
             
-            websocket.OnError += e => Debug.Log("Error! " + e);
-            websocket.OnClose += code => Debug.Log("Connection closed!");
+            websocket.OnError += e => FailConnection("connection_lost");
+
+            websocket.OnClose += code => FailConnection("connection_lost");
             
             websocket.OnMessage += bytes =>
             {
-                WsEnvelopeModel model = WsProtocol.Unpack(bytes);
+                if (leaving || IsDisconnected) return;
+
+                lastReceivedAt = Time.realtimeSinceStartup;
+
+                WsEnvelopeModel model;
+
+                try
+                {
+                    model = WsProtocol.Unpack(bytes);
+                }
+                catch
+                {
+                    FailConnection("protocol_error");
+                    return;
+                }
 
                 switch (model.Type)
                 {
@@ -91,14 +163,35 @@ namespace Kodimodi
                         ScoreboardUpdated?.Invoke(WsProtocol.UnpackPayload<ScoreboardModel>(model)); break;
                     case WsMessageType.MatchEnded:
                         HandleMatchEnded(WsProtocol.UnpackPayload<MatchEndedModel>(model)); break;
+                    case WsMessageType.BattleHeartbeatAck:
+                        break;
+
+                    case WsMessageType.PlayerLeft:
+                        HandlePlayerLeft(
+                            WsProtocol.UnpackPayload<PlayerLeftModel>(model));
+                        break;
+
+                    case WsMessageType.BattleClosed:
+                        FailConnection(
+                            WsProtocol.UnpackPayload<BattleClosedModel>(model).Reason);
+                        break;
                 }
             };
             
-            await websocket.Connect();
+            try
+            {
+                await websocket.Connect();
+            }
+            catch
+            {
+                FailConnection("connection_lost");
+            }
         }
 
         private void HandleBodyPosition(WsEnvelopeModel model)
         {
+            if (IsMatchEnded) return;
+            
             var resp = WsProtocol.UnpackPayload<PlayerBodyPositionModel>(model);
 
             if (resp.Id == id) return;
@@ -112,6 +205,72 @@ namespace Kodimodi
             t.Apply(resp);
         }
 
+        private void HandlePlayerLeft(PlayerLeftModel model)
+        {
+            departedPlayerIds.Add(model.Id);
+
+            if (spawned.TryGetValue(model.Id, out var visual))
+            {
+                spawned.Remove(model.Id);
+
+                if (visual != null)
+                {
+                    // Сразу скрываем модель и коллайдеры.
+                    visual.gameObject.SetActive(false);
+                    Destroy(visual.gameObject);
+                }
+            }
+        }
+
+        private void FailConnection(string reason)
+        {
+            if (leaving || IsDisconnected) return;
+
+            // После окончания матча сохраняем финальные окна.
+            if (IsMatchEnded)
+            {
+                Leave();
+                return;
+            }
+
+            IsDisconnected = true;
+            DisconnectReason = reason;
+
+            FreezeLocalPlayer();
+
+            foreach (var visual in spawned.Values)
+            {
+                if (visual != null)
+                    visual.Freeze();
+            }
+
+            Leave();
+            BattleDisconnected?.Invoke(reason);
+        }
+
+        private async void SendHeartbeat()
+        {
+            if (heartbeatSending || websocket == null)
+                return;
+
+            heartbeatSending = true;
+            var socket = websocket;
+
+            try
+            {
+                await socket.Send(
+                    WsProtocol.Pack(WsMessageType.BattleHeartbeat));
+            }
+            catch
+            {
+                FailConnection("connection_lost");
+            }
+            finally
+            {
+                heartbeatSending = false;
+            }
+        }
+        
         private void HandleSpawn(WsEnvelopeModel model)
         {
             var resp = WsProtocol.UnpackPayload<BattlePingResponseModel>(model);
@@ -119,12 +278,10 @@ namespace Kodimodi
             // сервер отклонил вход: комната закрыта, игрок не участник и т.д.
             if (!string.IsNullOrEmpty(resp.Error))
             {
-                Debug.LogError($"Сервер отклонил вход в матч: {resp.Error}");
-                if (!string.IsNullOrEmpty(menuSceneName))
-                    SceneManager.LoadScene(menuSceneName);
+                FailConnection(resp.Error);
                 return;
             }
-
+            battleReady = true;
             foreach (var s in resp.Spawns)
             {
                 var pos = new Vector3(s.Position.X, s.Position.Y, s.Position.Z);
@@ -135,6 +292,7 @@ namespace Kodimodi
                     FindAnyObjectByType<Camera>().gameObject.SetActive(false);
 
                     GameObject player = Instantiate(playerPrefab, pos, Quaternion.identity);
+                    localPlayer = player;
                     player.GetComponent<NetworkPlayer>().playerId = s.Id;
                     player.name = "Player_" + s.Id;
                     localDamageable = player.GetComponent<Damageable>();
@@ -154,6 +312,8 @@ namespace Kodimodi
 
         private void HandleShoot(WsEnvelopeModel model)
         {
+            if (IsMatchEnded) return;
+            
             var resp = WsProtocol.UnpackPayload<ShootModel>(model);
             if (resp.Id == id) return;
 
@@ -163,6 +323,8 @@ namespace Kodimodi
 
         private void HandleHealth(PlayerHealthModel m)
         {
+            if (IsMatchEnded) return;
+            
             if (m.Id == id)
             {
                 if (localDamageable != null) localDamageable.health = m.Health;
@@ -174,6 +336,8 @@ namespace Kodimodi
 
         private void HandleDied(PlayerDiedModel m)
         {
+            if (IsMatchEnded) return;
+            
             if (m.VictimId != id && spawned.TryGetValue(m.VictimId, out var v) && v != null)
                 v.SetAlive(false);
 
@@ -182,6 +346,8 @@ namespace Kodimodi
 
         private void HandleRespawned(PlayerRespawnedModel m)
         {
+            if (IsMatchEnded) return;
+            
             var pos = new Vector3(m.Position.X, m.Position.Y, m.Position.Z);
 
             if (m.Id == id)
@@ -195,32 +361,122 @@ namespace Kodimodi
 
         private void HandleMatchEnded(MatchEndedModel m)
         {
-            FPSFrameworkCore.IsInputActive = false;
+            if (IsMatchEnded) return;
+
+            IsMatchEnded = true;
+            FinalResult = m;
+
+            FreezeLocalPlayer();
+
+            foreach (var visual in spawned.Values)
+            {
+                if (visual != null)
+                    visual.Freeze();
+            }
+
             MatchEnded?.Invoke(m);
         }
 
-        void Update()
+        private void FreezeLocalPlayer()
+        {
+            FPSFrameworkCore.IsInputActive = false;
+
+            if (localPlayer == null) return;
+
+            // Останавливаем скрипты FPS Framework у локального персонажа.
+            foreach (var script in
+                     localPlayer.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (script != null
+                    && script.GetType().Namespace != null
+                    && script.GetType().Namespace.StartsWith("Akila.FPSFramework"))
+                {
+                    script.enabled = false;
+                }
+            }
+
+            foreach (var body in
+                     localPlayer.GetComponentsInChildren<Rigidbody>(true))
+            {
+                body.isKinematic = true;
+                body.constraints = RigidbodyConstraints.FreezeAll;
+            }
+
+            foreach (var controller in
+                     localPlayer.GetComponentsInChildren<CharacterController>(true))
+            {
+                controller.enabled = false;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (IsMatchEnded || IsDisconnected)
+                FPSFrameworkCore.IsInputActive = false;
+        }
+
+        private void Update()
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             websocket?.DispatchMessageQueue();
 #endif
+
+            if (leaving || IsDisconnected || !connectingStarted)
+                return;
+
+            float now = Time.realtimeSinceStartup;
+
+            if (!opened)
+            {
+                if (now - connectStartedAt > 10f)
+                    FailConnection("connection_timeout");
+
+                return;
+            }
+
+            if (now - lastReceivedAt > 30f)
+            {
+                FailConnection("connection_timeout");
+                return;
+            }
+
+            // Запасной клиентский таймаут ожидания старта.
+            if (!battleReady && now - openedAt > 45f)
+            {
+                FailConnection("loading_timeout");
+                return;
+            }
+
+            if (websocket != null
+                && websocket.State == WebSocketState.Open
+                && now >= nextHeartbeatAt)
+            {
+                nextHeartbeatAt = now + 5f;
+                SendHeartbeat();
+            }
         }
 
-        private async void OnDestroy()
+        private void OnDestroy()
         {
-            if (websocket != null) await websocket.Close();
-            if (Instance == this) Instance = null;
+            Leave();
+
+            if (Instance == this)
+                Instance = null;
         }
 
-        private async void OnApplicationQuit()
-        {
-            if (websocket != null) await websocket.Close();
-        }
-        
+        private void OnApplicationQuit() => Leave();
+
         public void Leave()
         {
+            // Устанавливаем до закрытия сокета, чтобы обычный выход
+            // не считался потерей соединения.
+            leaving = true;
+
+            GetComponent<Livekit>()?.DisconnectFromRoom();
+
             var socket = websocket;
             websocket = null;
+
             SafeClose(socket);
         }
 
@@ -228,10 +484,15 @@ namespace Kodimodi
         {
             try
             {
-                if (socket != null && socket.State == WebSocketState.Open)
+                if (socket != null
+                    && socket.State != WebSocketState.Closed)
+                {
                     await socket.Close();
+                }
             }
-            catch { /* уже закрыт */ }
+            catch
+            {
+            }
         }
     }
 }

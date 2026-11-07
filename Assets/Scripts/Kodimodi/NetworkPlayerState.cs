@@ -41,7 +41,8 @@ namespace Kodimodi
         
         async void Update()
         {
-            if (client == null || client.websocket == null) return;
+            if (client == null || !client.CanPlay || client.websocket == null)
+                return;
             
             if (isSending || Time.time < nextSend) return;
             

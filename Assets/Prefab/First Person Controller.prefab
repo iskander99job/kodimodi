@@ -1300,7 +1300,7 @@ MonoBehaviour:
   damageCameraShake: 0.3
   destroyOnDeath: 0
   destroyRoot: 0
-  ragdolls: 0
+  ragdolls: 1
   deathEffect: {fileID: 0}
   autoHeal: 0
   regenerationRate: 10

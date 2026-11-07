@@ -16,6 +16,7 @@ namespace Kodimodi
         private Vector3 lastPacketPos; // запоминаем позицию из прошлого пакета
         private bool initialized;
         private bool prevJumping;
+        private bool frozen;
         
         private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
         private static readonly int VerticalHash = Animator.StringToHash("Vertical");
@@ -28,6 +29,15 @@ namespace Kodimodi
             damageable = GetComponent<Damageable>();
         }
 
+        public void Freeze()
+        {
+            frozen = true;
+            targetPos = transform.position;
+
+            if (animator != null)
+                animator.speed = 0f;
+        }
+        
         public void Shoot()
         {
             animator.SetBool(FireHash, true);
@@ -76,7 +86,7 @@ namespace Kodimodi
 
         private void Update()
         {
-            if (!initialized) return;
+            if (frozen || !initialized) return;
 
             // Плавно двигаемся к цели
             transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * positionLerp);

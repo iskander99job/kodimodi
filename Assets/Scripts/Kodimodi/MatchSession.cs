@@ -5,5 +5,6 @@ namespace Kodimodi
         public static string RoomId;
         public static int PlayerId;
         public static bool LinkHandled;
+        public static string BattleToken;
     }
 }

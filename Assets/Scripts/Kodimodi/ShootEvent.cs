@@ -7,9 +7,22 @@ namespace Kodimodi
     public class ShootEvent : MonoBehaviour
     {
         // Firearm Events → On Fire Demand
-        public void OnFireHandler(Vector3 position, Quaternion rotation, Vector3 direction)
+        public void OnFireHandler(
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 direction)
         {
-            Send(new ShootModel { Id = BattleClient.Instance.id, HitPlayerId = 0, Damage = 0f });
+            var client = BattleClient.Instance;
+
+            if (client == null || !client.CanPlay)
+                return;
+
+            Send(new ShootModel
+            {
+                Id = client.id,
+                HitPlayerId = 0,
+                Damage = 0f
+            });
         }
 
         // Firearm Events → On Hit
@@ -27,8 +40,13 @@ namespace Kodimodi
         private static async void Send(ShootModel model)
         {
             var client = BattleClient.Instance;
-            if (client == null || client.websocket == null
-                               || client.websocket.State != WebSocketState.Open) return;
+            if (client == null
+                 || !client.CanPlay
+                 || client.websocket == null
+                 || client.websocket.State != WebSocketState.Open)
+            {
+                return;
+            }
 
             try { await client.websocket.Send(WsProtocol.Pack(WsMessageType.Shoot, model)); }
             catch (System.Exception e) { Debug.LogWarning("Shoot send failed: " + e.Message); }
