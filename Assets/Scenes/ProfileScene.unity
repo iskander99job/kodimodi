@@ -7164,6 +7164,143 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!1001 &1756053595
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1466188265552503313, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_Name
+      value: Enemy_1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2349059972581977457, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 7a361c67877254eb68c8de331b556e88, type: 2}
+    - target: {fileID: 2349059972581977457, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'Neck'\n\tTransform 'LeftArm'\n\tTransform
+        'LeftForeArm'\n\tTransform 'LeftHand'\n\tTransform 'RightHand'\n\tTransform
+        'RightHandThumb2'\n\tTransform 'Hips'\n\tTransform 'RightHandMiddle2'\n\tTransform
+        'Spine1'\n\tTransform 'Neck'\n\tand more ...\n\tFrom animation clip 'Idle'"
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417080722512147939, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 9.982116
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 9.982112
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 9.982115
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -6.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 13.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.016710354
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.0012124714
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.99723804
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.072357684
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 8.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 181.92
+      objectReference: {fileID: 0}
+    - target: {fileID: 2531760958087435990, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3458132836646055277, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0000000037252903
+      objectReference: {fileID: 0}
+    - target: {fileID: 3458132836646055277, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -0.000000022391786
+      objectReference: {fileID: 0}
+    - target: {fileID: 3458132836646055277, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788847603267321749, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788847603267321749, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788847603267321749, guid: 5b59a212f4a8d4009b37756e5abfa44b,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 1402328456039637347, guid: 5b59a212f4a8d4009b37756e5abfa44b, type: 3}
+    - {fileID: 1435965183961660542, guid: 5b59a212f4a8d4009b37756e5abfa44b, type: 3}
+    - {fileID: 17275866679891654, guid: 5b59a212f4a8d4009b37756e5abfa44b, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 4977198895891136832, guid: 5b59a212f4a8d4009b37756e5abfa44b, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5b59a212f4a8d4009b37756e5abfa44b, type: 3}
 --- !u!1 &1776850940
 GameObject:
   m_ObjectHideFlags: 0
@@ -9324,8 +9461,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.RemotePlayerVisuals
   animator: {fileID: 2349059971104916974}
-  positionLerp: 15
-  rotationLerp: 15
+  interpolationDelay: 0.1
+  shotAudio: {fileID: 0}
+  shotClip: {fileID: 0}
+  walkSpeed: 2
+  runSpeed: 5
+  teleportDistance: 8
 --- !u!1 &1417588446121310615
 GameObject:
   m_ObjectHideFlags: 0
@@ -9397,7 +9538,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &1467906308348814043
 GameObject:
   m_ObjectHideFlags: 0
@@ -12579,3 +12720,4 @@ SceneRoots:
   - {fileID: 1397898779}
   - {fileID: 1552461374}
   - {fileID: 2109762297}
+  - {fileID: 1756053595}
