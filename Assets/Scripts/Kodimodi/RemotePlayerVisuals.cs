@@ -10,7 +10,8 @@ namespace Kodimodi
         [SerializeField] private Animator animator;
         [SerializeField, Min(0.05f)]
         private float interpolationDelay = 0.1f;
-
+        [SerializeField] private AudioSource shotAudio;
+        [SerializeField] private AudioClip shotClip;
 // Начальные значения для калибровки анимаций.
         [SerializeField, Min(0.1f)]
         private float walkSpeed = 2f;
@@ -139,22 +140,14 @@ namespace Kodimodi
 
         public void Shoot()
         {
-            if (dead || frozen || remoteReloading || animator == null)
+            if (dead || frozen || remoteReloading)
                 return;
 
-            int layer = animator.GetLayerIndex("Reloading");
+            if (shotAudio != null && shotClip != null)
+                shotAudio.PlayOneShot(shotClip);
 
-            if (layer >= 0 &&
-                (animator.GetCurrentAnimatorStateInfo(layer)
-                     .IsName("Weapon_Reload") ||
-                 (animator.IsInTransition(layer) &&
-                  animator.GetNextAnimatorStateInfo(layer)
-                      .IsName("Weapon_Reload"))))
-            {
-                return;
-            }
-            
-            animator.SetTrigger(FireHash);
+            if (animator != null)
+                animator.SetTrigger(FireHash);
         }
 
 public void Apply(PlayerBodyPositionModel model)
