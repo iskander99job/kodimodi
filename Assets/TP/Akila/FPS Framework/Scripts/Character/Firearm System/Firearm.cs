@@ -1080,8 +1080,12 @@ namespace Akila.FPSFramework
                 return;
             }
 
+            bool allowDecals = damageable is Damageable target
+                ? target.allowBulletDecals
+                : true;
+            
             // Apply default or custom decal
-            if (defaultDecal != null)
+            if (defaultDecal != null && allowDecals)
             {
                 Vector3 hitPoint = hit.point;
                 Quaternion decalRotation = FPSFrameworkCore.GetFromToRotation(hit, decalDirection);

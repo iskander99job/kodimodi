@@ -24,7 +24,7 @@ namespace Akila.FPSFramework
         /// Delay before destruction occurs after death.
         /// </summary>
         public float destroyDelay;
-
+        public bool allowBulletDecals = true;
         /// <summary>
         /// How strong the camera shake should be on taking damage (0–1).
         /// </summary>
