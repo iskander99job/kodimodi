@@ -9355,8 +9355,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Akila.FPSFramework::Akila.FPSFramework.Damageable
   type: 0
+  useFirstPersonDeathView: 0
   health: 100
   destroyDelay: 0
+  allowBulletDecals: 1
   damageCameraShake: 0.3
   destroyOnDeath: 0
   destroyRoot: 0
