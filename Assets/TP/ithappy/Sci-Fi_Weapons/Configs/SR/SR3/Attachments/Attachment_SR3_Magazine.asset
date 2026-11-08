@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 572dda20e2ae4903927b61d08e03e54e, type: 3}
+  m_Name: Attachment_SR3_Magazine
+  m_EditorClassIdentifier: 
+  <AttachmentType>k__BackingField: 2
+  <Elements>k__BackingField:
+  - SlotType: 6
+    Prefab: {fileID: 2874958233126136351, guid: 7686ab09321e48b3943027a817c7e4e5, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: 1ff5fafcaeb54daf896ab8303ae140eb, type: 3}

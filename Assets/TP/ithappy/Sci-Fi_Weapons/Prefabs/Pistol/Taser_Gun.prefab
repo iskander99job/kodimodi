@@ -1,0 +1,194 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &4406432320231388
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3830171402922432757}
+    m_Modifications:
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.09387159
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.034201384
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.000000010032713
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4466604340948093577, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+      propertyPath: m_Name
+      value: Taser_Gun_Magazine
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+--- !u!4 &3943156522979231727 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3942690742213644339, guid: a3ed27efaa9e4d93ba667dcee258027b, type: 3}
+  m_PrefabInstance: {fileID: 4406432320231388}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3651638526206836510
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      propertyPath: m_Name
+      value: Taser_Gun
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 3943156522979231727}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 8075402535203957899}
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+--- !u!4 &3830171402922432757 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f25e6c426fe7446594d655c01dce0d1c, type: 3}
+  m_PrefabInstance: {fileID: 3651638526206836510}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8057308651401483381
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3830171402922432757}
+    m_Modifications:
+    - target: {fileID: 1480286772353638980, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_Name
+      value: Taser_Gun_Trigger
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.03988123
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.04660964
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.000000010969511
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b982885573004dc4936d935909f5ad40, type: 3}
+--- !u!4 &8075402535203957899 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2288066471989442814, guid: b982885573004dc4936d935909f5ad40, type: 3}
+  m_PrefabInstance: {fileID: 8057308651401483381}
+  m_PrefabAsset: {fileID: 0}

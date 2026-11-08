@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 572dda20e2ae4903927b61d08e03e54e, type: 3}
+  m_Name: Attachment_Common_Charm_18
+  m_EditorClassIdentifier: 
+  <AttachmentType>k__BackingField: 9
+  <Elements>k__BackingField:
+  - SlotType: 12
+    Prefab: {fileID: 4388178191235943450, guid: a483636b9a984c00b2fa4ad794f2a530, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: a308e0803fb84043a30489ada42f1db8, type: 3}

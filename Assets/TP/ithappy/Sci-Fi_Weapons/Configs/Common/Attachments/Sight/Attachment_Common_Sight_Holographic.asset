@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 572dda20e2ae4903927b61d08e03e54e, type: 3}
+  m_Name: Attachment_Common_Sight_Holographic
+  m_EditorClassIdentifier: 
+  <AttachmentType>k__BackingField: 1
+  <Elements>k__BackingField:
+  - SlotType: 8
+    Prefab: {fileID: 6414371352654520740, guid: df5df14dddd9489d83f944807b71fa26, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: a9865c5c12d6407ab3bf4c9f3672affc, type: 3}

@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &161473907351419773
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e450ae1947474a2789c010627826062c, type: 3}
+      propertyPath: m_Name
+      value: Tactical_LaserAiming_03
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8395241628476231333}
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e450ae1947474a2789c010627826062c, type: 3}
+--- !u!4 &411818595733052566 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: e450ae1947474a2789c010627826062c, type: 3}
+  m_PrefabInstance: {fileID: 161473907351419773}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &498738181630115780
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 411818595733052566}
+    m_Modifications:
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.23286057
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.011910915
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.00008418315
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8728517933898738651, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+      propertyPath: m_Name
+      value: Tactical_LaserAiming_03_Ray
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+--- !u!4 &8395241628476231333 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8244468571851813217, guid: ad9dfc899d104a06899cf7b60b6d96a0, type: 3}
+  m_PrefabInstance: {fileID: 498738181630115780}
+  m_PrefabAsset: {fileID: 0}

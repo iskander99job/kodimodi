@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 572dda20e2ae4903927b61d08e03e54e, type: 3}
+  m_Name: Attachment_AR1_Handle
+  m_EditorClassIdentifier: 
+  <AttachmentType>k__BackingField: 11
+  <Elements>k__BackingField:
+  - SlotType: 3
+    Prefab: {fileID: 5120057561698374800, guid: 71c449e427194ffa89d9995ab134c195, type: 3}
+  - SlotType: 0
+    Prefab: {fileID: 286238852456650243, guid: 36c226ece88f4ed58ad6188301f5a872, type: 3}
+  - SlotType: 1
+    Prefab: {fileID: 8010289473157596992, guid: 911934e1ae2a4bf19ee18a9a4fa87a02, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: 3ecd42920ef84b66800dc46b0b6075de, type: 3}

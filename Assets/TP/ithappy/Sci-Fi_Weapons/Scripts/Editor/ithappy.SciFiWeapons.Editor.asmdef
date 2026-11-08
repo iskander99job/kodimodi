@@ -1,0 +1,18 @@
+{
+    "name": "ithappy.SciFiWeapons.Editor",
+    "rootNamespace": "GunCustomizationTool.SciFi_Weapons",
+    "references": [
+        "ithappy.SciFiWeapons"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

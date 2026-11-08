@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3316611814911770949
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      propertyPath: m_Name
+      value: AR6_GrenadeLauncher
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7379850863168264179}
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+--- !u!4 &2993840020144744110 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 145a796fe4bb4d1b88b910be3f608e0f, type: 3}
+  m_PrefabInstance: {fileID: 3316611814911770949}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5955195884086117184
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2993840020144744110}
+    m_Modifications:
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.010583878
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.086093426
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.000000006034213
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4576982084985490953, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+      propertyPath: m_Name
+      value: AR6_GrenadeLauncher_Trigger
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+--- !u!4 &7379850863168264179 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3805370540551787699, guid: 3092943a2da249058d7b1063e4685f82, type: 3}
+  m_PrefabInstance: {fileID: 5955195884086117184}
+  m_PrefabAsset: {fileID: 0}
