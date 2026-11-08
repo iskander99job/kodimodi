@@ -66,6 +66,13 @@ namespace Kodimodi
         private static readonly int IsDeadHash =
             Animator.StringToHash("IsDead");
 
+        private static readonly int ReloadHash =
+            Animator.StringToHash("Reload");
+        
+        private static readonly int ReloadEmptyHash =
+            Animator.StringToHash("Reloading.Empty");
+
+        private bool remoteReloading;
         private void Awake()
         {
             if (animator == null)
@@ -77,6 +84,48 @@ namespace Kodimodi
             targetRot = transform.rotation;
         }
 
+        public void SetReloading(bool value)
+        {
+            if (dead || frozen || animator == null)
+                return;
+
+            if (remoteReloading == value)
+                return;
+
+            remoteReloading = value;
+
+            int layer = animator.GetLayerIndex("Reloading");
+
+            if (layer < 0)
+                return;
+
+            if (value)
+            {
+                animator.ResetTrigger(FireHash);
+                animator.SetTrigger(ReloadHash);
+            }
+            else
+            {
+                animator.ResetTrigger(ReloadHash);
+
+                // Завершение или отмена перезарядки.
+                animator.CrossFadeInFixedTime(
+                    ReloadEmptyHash,
+                    0.1f,
+                    layer,
+                    0f);
+            }
+        }
+        
+        public void Reload()
+        {
+            if (dead || frozen || animator == null)
+                return;
+
+            animator.ResetTrigger(FireHash);
+            animator.SetTrigger(ReloadHash);
+        }
+        
         public void Freeze()
         {
             frozen = true;
@@ -90,9 +139,21 @@ namespace Kodimodi
 
         public void Shoot()
         {
-            if (dead || frozen || animator == null)
+            if (dead || frozen || remoteReloading || animator == null)
                 return;
 
+            int layer = animator.GetLayerIndex("Reloading");
+
+            if (layer >= 0 &&
+                (animator.GetCurrentAnimatorStateInfo(layer)
+                     .IsName("Weapon_Reload") ||
+                 (animator.IsInTransition(layer) &&
+                  animator.GetNextAnimatorStateInfo(layer)
+                      .IsName("Weapon_Reload"))))
+            {
+                return;
+            }
+            
             animator.SetTrigger(FireHash);
         }
 
@@ -270,6 +331,7 @@ private void SetMovementAnimation(Vector3 velocity)
                 return;
 
             dead = true;
+            remoteReloading = false;
             snapshots.Clear();
             targetPos = transform.position;
             targetRot = transform.rotation;
@@ -292,6 +354,7 @@ private void SetMovementAnimation(Vector3 velocity)
             animator.speed = 1f;
 
             animator.ResetTrigger(FireHash);
+            animator.ResetTrigger(ReloadHash);
             animator.SetFloat(HorizontalHash, 0);
             animator.SetFloat(VerticalHash, 0);
             animator.SetFloat(InputMagnitudeHash, 0);
@@ -310,6 +373,7 @@ private void SetMovementAnimation(Vector3 velocity)
 
         private void RestoreAliveVisuals()
         {
+            remoteReloading = false;
             dead = false;
             frozen = false;
             snapshots.Clear();
@@ -337,6 +401,7 @@ private void SetMovementAnimation(Vector3 velocity)
             animator.speed = 1f;
             animator.SetBool(IsDeadHash, false);
             animator.ResetTrigger(FireHash);
+            animator.ResetTrigger(ReloadHash);
 
             animator.SetFloat(HorizontalHash, 0f);
             animator.SetFloat(VerticalHash, 0f);

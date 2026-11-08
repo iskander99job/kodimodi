@@ -166,7 +166,10 @@ namespace Kodimodi
                         HandleMatchEnded(WsProtocol.UnpackPayload<MatchEndedModel>(model)); break;
                     case WsMessageType.BattleHeartbeatAck:
                         break;
-
+                    case WsMessageType.PlayerReload:
+                        HandleReload(
+                            WsProtocol.UnpackPayload<PlayerReloadModel>(model));
+                        break;
                     case WsMessageType.PlayerLeft:
                         HandlePlayerLeft(
                             WsProtocol.UnpackPayload<PlayerLeftModel>(model));
@@ -189,6 +192,38 @@ namespace Kodimodi
             }
         }
 
+        public async void SendReloadState(bool isReloading)
+        {
+            if (websocket == null ||
+                IsMatchEnded ||
+                IsDisconnected ||
+                leaving ||
+                !battleReady)
+            {
+                return;
+            }
+
+            if (isReloading && !CanPlay)
+                return;
+
+            try
+            {
+                await websocket.Send(
+                    WsProtocol.Pack(
+                        WsMessageType.PlayerReload,
+                        new PlayerReloadModel
+                        {
+                            Id = id,
+                            IsReloading = isReloading
+                        }));
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(
+                    "Reload state send failed: " + e.Message);
+            }
+        }
+        
         private void HandleBodyPosition(WsEnvelopeModel model)
         {
             if (IsMatchEnded) return;
@@ -206,6 +241,18 @@ namespace Kodimodi
             t.Apply(resp);
         }
 
+        private void HandleReload(PlayerReloadModel model)
+        {
+            if (IsMatchEnded || model.Id == id)
+                return;
+
+            if (spawned.TryGetValue(model.Id, out var visual) &&
+                visual != null)
+            {
+                visual.SetReloading(model.IsReloading);
+            }
+        }
+        
         private void HandlePlayerLeft(PlayerLeftModel model)
         {
             bool firstLeave = departedPlayerIds.Add(model.Id);

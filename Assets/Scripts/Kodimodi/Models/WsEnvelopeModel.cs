@@ -31,6 +31,7 @@ namespace Kodimodi.Models
         PlayerLeft = 16,
         BattleClosed = 17,
         BattleHeartbeat = 18,
-        BattleHeartbeatAck = 19
+        BattleHeartbeatAck = 19,
+        PlayerReload = 20
     }
 }

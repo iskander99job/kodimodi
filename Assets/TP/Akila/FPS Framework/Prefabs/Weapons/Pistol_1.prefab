@@ -407,6 +407,7 @@ GameObject:
   - component: {fileID: 1069960484613499421}
   - component: {fileID: 1069960484613499422}
   - component: {fileID: 2357917991789078362}
+  - component: {fileID: -1171543388724626513}
   m_Layer: 12
   m_Name: Pistol_1
   m_TagString: Untagged
@@ -558,6 +559,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 095d2aac153cd4bb09b7846d24cec53a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::yyy
+--- !u!114 &-1171543388724626513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069960484613499416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d414a52672944b78c1db669ce90da90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.NetworkWeaponReload
 --- !u!1 &1069960484828834673
 GameObject:
   m_ObjectHideFlags: 0
