@@ -26,6 +26,8 @@ namespace Akila.FPSFramework
         public InventoryCollectable ammoProfile { get; set; }
 
         private Crosshair crosshair;
+        private bool crosshairHiddenByDeath;
+        private bool crosshairWasActiveBeforeDeath;
         /// <summary>
         /// Pattern for bullet spread when hip firing.
         /// </summary>
@@ -383,7 +385,7 @@ namespace Akila.FPSFramework
 
             // Call the base class Update method to ensure any inherited actions is performed.
             base.Update();
-
+            UpdateCrosshairDeathVisibility();
             if (reloadingAnimation)
             {
                 reloadingAnimation.triggerType = ProceduralAnimation.TriggerType.None;
@@ -1151,6 +1153,37 @@ namespace Akila.FPSFramework
             onAnyHitInParent?.OnAnyHitInParent(hitInfo);
         }
 
+        private void UpdateCrosshairDeathVisibility()
+        {
+            if (crosshair == null || characterManager == null)
+                return;
+
+            var damageable = characterManager.GetComponent<Damageable>();
+
+            bool dead = damageable != null &&
+                        (damageable.health <= 0 || damageable.DeadConfirmed);
+
+            if (dead)
+            {
+                if (!crosshairHiddenByDeath)
+                {
+                    crosshairWasActiveBeforeDeath =
+                        crosshair.gameObject.activeSelf;
+
+                    crosshairHiddenByDeath = true;
+                }
+
+                crosshair.gameObject.SetActive(false);
+            }
+            else if (crosshairHiddenByDeath)
+            {
+                crosshair.gameObject.SetActive(
+                    crosshairWasActiveBeforeDeath);
+
+                crosshairHiddenByDeath = false;
+            }
+        }
+        
         /// <summary>
         /// Instantiates and ejects a casing from the firearm, applying velocity and optional chambering effects.
         /// </summary>

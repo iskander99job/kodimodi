@@ -33,7 +33,7 @@ namespace Akila.FPSFramework
         [Tooltip("How high the player can jump.")]
         public float jumpHeight = 6;
 
-        [Tooltip("Player�s height when crouched.")]
+        [Tooltip("Player�s height when crouched.")]
         public float crouchHeight = 1.5f;
 
         public float crouchTime = 0.1f;
@@ -76,7 +76,7 @@ namespace Akila.FPSFramework
 
         [Header("Camera")]
         [FormerlySerializedAs("_Camera")]
-        [Tooltip("Reference to the player�s camera transform.")]
+        [Tooltip("Reference to the player�s camera transform.")]
         public Transform cameraTransform;
 
         [Tooltip("Maximum upward camera rotation in degrees.")]
@@ -134,7 +134,7 @@ namespace Akila.FPSFramework
         public float tacticalSprintAmount { get; set; }
         public bool canTacticalSprint { get; set; }
 
-
+        private bool frozenForDeath;
         private Vector3 slopeDirection;
 
         private float yRotation = 0;
@@ -175,7 +175,58 @@ namespace Akila.FPSFramework
         private Speedometer speedometer;
 
         private bool onMovingPlatform;
+        public void FreezeForDeath()
+        {
+            frozenForDeath = true;
+            ClearMotionForRespawn();
+        }
 
+        public void ResetAfterNetworkRespawn()
+        {
+            ClearMotionForRespawn();
+
+            isCrouching = false;
+            controller.height = defaultHeight;
+            controller.center = Vector3.up * controller.height * 0.5f;
+            controller.stepOffset = defaultstepOffset;
+            Orientation.localPosition = controller.center;
+
+            ApplyCrouching();
+
+            // Падение не меняет внутренние углы управления мышью.
+            cameraTransform.SetRotation(cameraRotation, !globalOrientation);
+            Orientation.SetRotation(playerRotation, !globalOrientation);
+
+            prevCamRotation = cameraTransform.rotation;
+            frozenForDeath = false;
+        }
+
+        private void ClearMotionForRespawn()
+        {
+            desiredVelocityRef = Vector3.zero;
+            desiredVelocity = Vector3.zero;
+            slideVelocity = Vector3.zero;
+            velocity = Vector3.zero;
+            velocityF = Vector3.zero;
+            onJumpVelcoity = Vector3.zero;
+            currentVel = Vector3.zero;
+            totalVelocity = Vector3.zero;
+
+            currentGravityForce = 0;
+            currentCrouchVel = 0;
+            attemptedToJump = false;
+            onMovingPlatform = false;
+            speed = 0;
+            stepCycle = 0;
+            nextStep = stepInterval;
+            tacticalSprintAmount = 0;
+
+            if (leanRightAnimation)
+                leanRightAnimation.IsPlaying = false;
+
+            if (leanLeftAnimation)
+                leanLeftAnimation.IsPlaying = false;
+        }
         protected virtual void Awake()
         {
             characterManager = GetComponent<CharacterManager>();
@@ -303,7 +354,7 @@ namespace Akila.FPSFramework
 
         protected virtual void Update()
         {            
-            if (!isActive) return;
+            if (!isActive || frozenForDeath) return;
 
             if(leanRightAnimation)
             {
@@ -451,7 +502,11 @@ namespace Akila.FPSFramework
             //Feed character manager with the info it needs
             //The character manager uses these info to invoke OnJump or OnLand events
             //Other components use the walkSpeed and sprintSpeed values to calculate certain things
-            characterManager.SetValues(controller.velocity, controller.isGrounded, walkSpeed, sprintSpeed);
+            characterManager.SetValues(
+                frozenForDeath ? Vector3.zero : controller.velocity,
+                controller.isGrounded,
+                walkSpeed,
+                sprintSpeed);
 
             //Get the info we need for this movement script from character manager
             //Other components change this value e.g when aiming, speedMultiplier changes
@@ -482,6 +537,7 @@ namespace Akila.FPSFramework
 
         public virtual void FixedUpdate()
         {
+            if (frozenForDeath) return;
             //update step sounds
             ProgressStepCycle();
         }

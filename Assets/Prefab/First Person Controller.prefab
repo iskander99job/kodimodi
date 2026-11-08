@@ -1295,6 +1295,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Akila.FPSFramework::Akila.FPSFramework.Damageable
   type: 0
+  useFirstPersonDeathView: 0
   health: 100
   destroyDelay: 0
   damageCameraShake: 0.3
@@ -1326,6 +1327,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4f9099cd71e947f0b91b46aeb490c45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.NetworkRespawn
+  cameraRoot: {fileID: 2764035696081071073}
+  mainCamera: {fileID: 5226082936274674917}
+  bodyRadius: 0.18
+  backwardSpeed: 0.6
+  rollAngle: 80
+  rollTime: 0.45
+  physicsLayer: 0
 --- !u!1 &2382363374517761905
 GameObject:
   m_ObjectHideFlags: 0
@@ -2072,7 +2080,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 19.155, y: -4}
+  m_AnchoredPosition: {x: 19.155, y: -20.55}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1503514693544876168

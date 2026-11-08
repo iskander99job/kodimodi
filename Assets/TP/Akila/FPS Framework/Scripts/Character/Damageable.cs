@@ -14,7 +14,7 @@ namespace Akila.FPSFramework
         /// Defines the type of this damageable (Player, NPC, Other).
         /// </summary>
         public DamagableType type = DamagableType.Other;
-
+        public bool useFirstPersonDeathView;
         /// <summary>
         /// Current health of this damageable.
         /// </summary>
@@ -330,7 +330,8 @@ namespace Akila.FPSFramework
 
             DeadConfirmed = true;
 
-            if (ragdoll) ragdoll.Enable();
+            if (ragdoll && !useFirstPersonDeathView)
+                ragdoll.Enable();
 
             if (deathEffect)
             {
@@ -347,7 +348,8 @@ namespace Akila.FPSFramework
                     damagePos = DamageSource.transform.position;
                 }
 
-                DeathCamera.Instance?.Enable(gameObject, damagePos);
+                if (!useFirstPersonDeathView)
+                    DeathCamera.Instance?.Enable(gameObject, damagePos);
             }
 
             died = true;
