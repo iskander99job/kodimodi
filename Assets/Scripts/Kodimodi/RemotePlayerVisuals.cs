@@ -1,14 +1,42 @@
 using Akila.FPSFramework;
 using Kodimodi.Models;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Kodimodi
 {
     public class RemotePlayerVisuals : MonoBehaviour
     {
         [SerializeField] private Animator animator;
-        [SerializeField] private float positionLerp = 15f;
-        [SerializeField] private float rotationLerp = 15f;
+        [SerializeField, Min(0.05f)]
+        private float interpolationDelay = 0.1f;
+
+// Начальные значения для калибровки анимаций.
+        [SerializeField, Min(0.1f)]
+        private float walkSpeed = 2f;
+
+        [SerializeField, Min(0.1f)]
+        private float runSpeed = 5f;
+
+// Более крупное перемещение считаем телепортом.
+        [SerializeField, Min(0.1f)]
+        private float teleportDistance = 8f;
+
+        private struct Snapshot
+        {
+            public double time;
+            public Vector3 position;
+            public Quaternion rotation;
+        }
+
+        private readonly List<Snapshot> snapshots =
+            new List<Snapshot>(32);
+
+        private double clockOffset;
+        private float lastArrival;
+
+        private static readonly int LocomotionSpeedHash =
+            Animator.StringToHash("LocomotionSpeed");
 
         private Damageable damageable;
 
@@ -52,6 +80,7 @@ namespace Kodimodi
         public void Freeze()
         {
             frozen = true;
+            snapshots.Clear();
             targetPos = transform.position;
 
             // Анимация смерти должна продолжать проигрываться.
@@ -64,65 +93,160 @@ namespace Kodimodi
             if (dead || frozen || animator == null)
                 return;
 
-            animator.SetBool(FireHash, true);
+            animator.SetTrigger(FireHash);
         }
 
-        public void Apply(PlayerBodyPositionModel model)
-        {
-            if (dead || frozen)
-                return;
+public void Apply(PlayerBodyPositionModel model)
+{
+    if (dead || frozen)
+        return;
 
-            Vector3 newPos = new Vector3(
-                model.Position.X,
-                model.Position.Y,
-                model.Position.Z);
+    Vector3 position = new Vector3(
+        model.Position.X,
+        model.Position.Y,
+        model.Position.Z);
 
-            targetRot = Quaternion.Euler(
-                0f, model.Rotation.Y, 0f);
+    Quaternion rotation = Quaternion.Euler(
+        0f, model.Rotation.Y, 0f);
 
-            if (!initialized)
-            {
-                transform.position = newPos;
-                transform.rotation = targetRot;
-                initialized = true;
-            }
+    double now = Time.timeAsDouble;
 
-            targetPos = newPos;
+    bool reset = !initialized;
 
-            if (animator == null)
-                return;
+    if (snapshots.Count > 0)
+    {
+        Snapshot last = snapshots[snapshots.Count - 1];
 
-            animator.SetFloat(HorizontalHash, model.H);
-            animator.SetFloat(VerticalHash, model.V);
+        reset |= Time.time - lastArrival > 0.5f ||
+            Vector3.Distance(last.position, position) >
+            teleportDistance;
+    }
 
-            animator.SetFloat(
-                InputMagnitudeHash,
-                Mathf.Clamp01(
-                    new Vector2(model.H, model.V).magnitude));
-        }
+    if (reset)
+    {
+        snapshots.Clear();
 
-        private void Update()
-        {
-            if (!dead &&
-                damageable != null &&
-                damageable.health <= 0)
-            {
-                SetAlive(false);
-            }
+        transform.SetPositionAndRotation(position, rotation);
 
-            if (dead || frozen || !initialized)
-                return;
+        initialized = true;
+        SetMovementAnimation(Vector3.zero);
+    }
 
-            transform.position = Vector3.Lerp(
-                transform.position,
-                targetPos,
-                Time.deltaTime * positionLerp);
+    // Часы игроков могут иметь разное начало отсчёта.
+    // Переводим время отправителя в локальную временную шкалу.
+    if (snapshots.Count == 0)
+        clockOffset = now - model.SentAt;
 
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                targetRot,
-                Time.deltaTime * rotationLerp);
-        }
+    double sampleTime = model.SentAt + clockOffset;
+    lastArrival = Time.time;
+
+    if (snapshots.Count > 0 &&
+        sampleTime <= snapshots[snapshots.Count - 1].time)
+    {
+        return;
+    }
+
+    snapshots.Add(new Snapshot
+    {
+        time = sampleTime,
+        position = position,
+        rotation = rotation
+    });
+
+    if (snapshots.Count > 64)
+        snapshots.RemoveAt(0);
+}
+
+private void Update()
+{
+    if (!dead &&
+        damageable != null &&
+        damageable.health <= 0)
+    {
+        SetAlive(false);
+    }
+
+    if (dead || frozen || !initialized || snapshots.Count == 0)
+        return;
+
+    double renderTime =
+        Time.timeAsDouble - interpolationDelay;
+
+    while (snapshots.Count > 2 &&
+           snapshots[1].time <= renderTime)
+    {
+        snapshots.RemoveAt(0);
+    }
+
+    Snapshot a = snapshots[0];
+    Snapshot b = snapshots[snapshots.Count > 1 ? 1 : 0];
+
+    double interval = b.time - a.time;
+
+    float t = interval > 0
+        ? Mathf.Clamp01(
+            (float)((renderTime - a.time) / interval))
+        : 0f;
+
+    Vector3 previousPosition = transform.position;
+
+    transform.SetPositionAndRotation(
+        Vector3.Lerp(a.position, b.position, t),
+        Quaternion.Slerp(a.rotation, b.rotation, t));
+
+    Vector3 velocity = Time.deltaTime > 0f
+        ? (transform.position - previousPosition) / Time.deltaTime
+        : Vector3.zero;
+
+    // Вертикальное движение не должно ускорять шаги.
+    velocity.y = 0f;
+
+    SetMovementAnimation(velocity);
+}
+
+private void SetMovementAnimation(Vector3 velocity)
+{
+    if (animator == null)
+        return;
+
+    float speed = velocity.magnitude;
+
+    if (speed < 0.05f)
+    {
+        animator.SetFloat(HorizontalHash, 0f);
+        animator.SetFloat(VerticalHash, 0f);
+        animator.SetFloat(InputMagnitudeHash, 0f);
+        animator.SetFloat(LocomotionSpeedHash, 1f);
+        return;
+    }
+
+    Vector3 direction =
+        transform.InverseTransformDirection(velocity / speed);
+
+    // В существующем Blend Tree:
+    // ходьба — координаты +/-1, бег — +/-2.
+    // Диагональные точки тоже расположены по квадрату.
+    direction /= Mathf.Max(
+        Mathf.Abs(direction.x),
+        Mathf.Abs(direction.z));
+
+    float walk = Mathf.Max(0.1f, walkSpeed);
+    float run = Mathf.Max(walk + 0.1f, runSpeed);
+
+    float runBlend = Mathf.InverseLerp(walk, run, speed);
+    float referenceSpeed = Mathf.Lerp(walk, run, runBlend);
+    float ring = 1f + runBlend;
+
+    animator.SetFloat(HorizontalHash, direction.x * ring);
+    animator.SetFloat(VerticalHash, direction.z * ring);
+
+    // Теперь это скорость в единицах Unity в секунду.
+    animator.SetFloat(InputMagnitudeHash, speed);
+
+    animator.SetFloat(
+        LocomotionSpeedHash,
+        Mathf.Clamp(speed / referenceSpeed, 0.05f, 3f));
+}
 
         public void SetHealth(float value)
         {
@@ -148,7 +272,7 @@ namespace Kodimodi
                 return;
 
             dead = true;
-
+            snapshots.Clear();
             targetPos = transform.position;
             targetRot = transform.rotation;
 
@@ -169,7 +293,7 @@ namespace Kodimodi
 
             animator.speed = 1f;
 
-            animator.SetBool(FireHash, false);
+            animator.ResetTrigger(FireHash);
             animator.SetFloat(HorizontalHash, 0);
             animator.SetFloat(VerticalHash, 0);
             animator.SetFloat(InputMagnitudeHash, 0);
@@ -190,7 +314,7 @@ namespace Kodimodi
         {
             dead = false;
             frozen = false;
-
+            snapshots.Clear();
             if (deathColliders != null)
             {
                 for (int i = 0; i < deathColliders.Length; i++)
@@ -211,10 +335,10 @@ namespace Kodimodi
 
             // Сбрасываем смерть, переходы и состояния всех слоёв.
             animator.Rebind();
-
+            animator.SetFloat(LocomotionSpeedHash, 1f);
             animator.speed = 1f;
             animator.SetBool(IsDeadHash, false);
-            animator.SetBool(FireHash, false);
+            animator.ResetTrigger(FireHash);
 
             animator.SetFloat(HorizontalHash, 0f);
             animator.SetFloat(VerticalHash, 0f);

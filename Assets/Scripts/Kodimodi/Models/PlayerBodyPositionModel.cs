@@ -11,5 +11,6 @@ namespace Kodimodi.Models
         public bool IsJumping { get; set; }
         public float H { get; set; }
         public float V { get; set; }
+        public double SentAt { get; set; }
     }
 }
