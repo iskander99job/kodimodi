@@ -29,6 +29,7 @@ namespace Kodimodi.UI
         private bool matchEnded;
         private Coroutine finishRoutine;
         private BattleClient client;
+        private MatchNotifications notifications;
         
         [SerializeField] private string menuSceneName = "ProfileScene";
         [SerializeField] private TMP_Text killsRemainingText;
@@ -37,6 +38,19 @@ namespace Kodimodi.UI
         [SerializeField] private LeanWindow connectionLostPopup;
         [SerializeField] private TMP_Text connectionLostText;
 
+        private void Awake()
+        {
+            notifications = GetComponent<MatchNotifications>();
+        }
+        
+        private void OnPlayerLeft(int playerId)
+        {
+            if (matchEnded || client == null || client.IsDisconnected)
+                return;
+
+            notifications?.Show($"Игрок {playerId} вышел из матча");
+        }
+        
         private void Start()
         {
             client = BattleClient.Instance;
@@ -45,6 +59,7 @@ namespace Kodimodi.UI
             client.ScoreboardUpdated += OnScoreboard;
             client.MatchEnded += OnMatchEnded;
             client.BattleDisconnected += OnBattleDisconnected;
+            client.PlayerLeft += OnPlayerLeft;
 
             if (client.IsDisconnected)
                 OnBattleDisconnected(client.DisconnectReason);
@@ -116,6 +131,7 @@ namespace Kodimodi.UI
                 client.ScoreboardUpdated -= OnScoreboard;
                 client.MatchEnded -= OnMatchEnded;
                 client.BattleDisconnected -= OnBattleDisconnected;
+                client.PlayerLeft -= OnPlayerLeft;
             }
 
             if (finishRoutine != null)

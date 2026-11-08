@@ -28,6 +28,7 @@ namespace Kodimodi
         
         public event Action<ScoreboardModel> ScoreboardUpdated;
         public event Action<MatchEndedModel> MatchEnded;
+        public event Action<int> PlayerLeft;
         public event Action<int, int> PlayerKilled;   // victimId, killerId
         
         private NetworkRespawn localRespawn;
@@ -207,7 +208,7 @@ namespace Kodimodi
 
         private void HandlePlayerLeft(PlayerLeftModel model)
         {
-            departedPlayerIds.Add(model.Id);
+            bool firstLeave = departedPlayerIds.Add(model.Id);
 
             if (spawned.TryGetValue(model.Id, out var visual))
             {
@@ -220,6 +221,9 @@ namespace Kodimodi
                     Destroy(visual.gameObject);
                 }
             }
+            
+            if (firstLeave)
+                PlayerLeft?.Invoke(model.Id);
         }
 
         private void FailConnection(string reason)
