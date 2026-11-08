@@ -213,13 +213,11 @@ private void SetMovementAnimation(Vector3 velocity)
 
     if (speed < 0.05f)
     {
-        animator.SetFloat(HorizontalHash, 0f);
-        animator.SetFloat(VerticalHash, 0f);
+        // Сохраняем последнее направление для плавного выхода в Idle.
         animator.SetFloat(InputMagnitudeHash, 0f);
         animator.SetFloat(LocomotionSpeedHash, 1f);
         return;
     }
-
     Vector3 direction =
         transform.InverseTransformDirection(velocity / speed);
 
