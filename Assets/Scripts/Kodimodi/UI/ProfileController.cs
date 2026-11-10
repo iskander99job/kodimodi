@@ -103,8 +103,9 @@ namespace Kodimodi.UI
             DetectMediaBrowser(gameObject.name);
             CheckCameraPermission(gameObject.name);
 #else
-            // В редакторе проверяем только превью камеры.
-            // Браузерные разрешения проверяются в WebGL.
+            // В редакторе достаточно камеры.
+            microphoneGranted = true;
+
             if (Application.HasUserAuthorization(UserAuthorization.WebCam))
             {
                 cameraPermissionGranted = true;
@@ -264,9 +265,9 @@ namespace Kodimodi.UI
                 gameObject.name,
                 IsCameraReady ? 0 : 1);
 #else
-            SetMessage(
-                "Разрешения камеры и микрофона " +
-                "нужно проверять в WebGL-сборке.");
+            microphoneGranted = true;
+            cameraPermissionGranted = true;
+            StartCamera();
 #endif
         }
 
@@ -629,21 +630,22 @@ namespace Kodimodi.UI
 
         private void ShowBrowserPermissionHelp()
         {
-            // Не добавляем один и тот же текст повторно.
-            if (permissionHelpVisible)
-                return;
+#if !UNITY_EDITOR
+    if (permissionHelpVisible)
+        return;
 
-            permissionHelpVisible = true;
+    permissionHelpVisible = true;
 
-            if (cameraPopupText != null)
-            {
-                cameraPopupText.text +=
-                    "\n\n" + GetBrowserPermissionInstructions() +
-                    "\n\nНажми «Включить / проверить снова»." +
-                    "\nЕсли браузер просит обновить страницу — обнови её.";
-            }
+    if (cameraPopupText != null)
+    {
+        cameraPopupText.text +=
+            "\n\n" + GetBrowserPermissionInstructions() +
+            "\n\nНажми «Включить / проверить снова»." +
+            "\nЕсли браузер просит обновить страницу — обнови её.";
+    }
 
-            UpdatePermissionHelpImage();
+    UpdatePermissionHelpImage();
+#endif
         }
 
         private void UpdatePermissionHelpImage()
