@@ -30,7 +30,7 @@ namespace Kodimodi
         private async void LateUpdate()
         {
             if (client == null ||
-                !client.CanPlay ||
+                !client.CanPublishPlayerState ||
                 client.websocket == null ||
                 isSending ||
                 Time.time < nextSend)
@@ -49,14 +49,35 @@ namespace Kodimodi
                     ? cameraTransform.eulerAngles
                     : transform.eulerAngles;
 
+                bool blocked = client.VideoMovementBlocked;
+
                 var model = new PlayerBodyPositionModel
                 {
                     Id = client.id,
-                    Position = new Vec3(pos.x, pos.y, pos.z),
-                    Rotation = new Vec3(rot.x, rot.y, rot.z),
-                    IsJumping = input != null && input.JumpInput,
-                    H = Input.GetAxis("Horizontal"),
-                    V = Input.GetAxis("Vertical"),
+
+                    Position = new Vec3(
+                        pos.x,
+                        pos.y,
+                        pos.z),
+
+                    Rotation = new Vec3(
+                        rot.x,
+                        rot.y,
+                        rot.z),
+
+                    IsJumping =
+                        !blocked &&
+                        input != null &&
+                        input.JumpInput,
+
+                    H = blocked
+                        ? 0f
+                        : Input.GetAxis("Horizontal"),
+
+                    V = blocked
+                        ? 0f
+                        : Input.GetAxis("Vertical"),
+
                     SentAt = Time.timeAsDouble
                 };
 

@@ -38,7 +38,7 @@ namespace Kodimodi.UI
         public GameObject createMatchModal, searchMatchModal;
         public LeanWindow modal;
         public GameObject createMatchModalSpinner, searchMatchModalSpinner;
-
+        [SerializeField] private RoomPreviewController roomPreview;
         [SerializeField] private LobbyClient lobby;
         // Временно: пока нет ввода никнейма
         [SerializeField] private string nickname = "Player";
@@ -58,7 +58,9 @@ namespace Kodimodi.UI
         private static readonly Color StartDisabledColor = new Color32(0x5B, 0x58, 0x58, 0xFF); // #5B5858
         private static readonly Color StartEnabledColor = Color.black;
         private const string MatchSceneName = "LevelTst";
-
+        private ProfileController profileController;
+        private bool waitingForLinkedRoom;
+        private Coroutine linkedRoomRoutine;
         [Header("Закрытие лобби")]
         [SerializeField] private LeanWindow lobbyClosedPopup;
         [SerializeField] private TMP_Text lobbyClosedText;
@@ -75,6 +77,14 @@ namespace Kodimodi.UI
             lobby.StateReceived -= OnLobbyState;
             lobby.MatchStarted -= OnMatchStarted;
             lobby.Closed -= OnLobbyClosed;
+            
+            if (linkedRoomRoutine != null)
+            {
+                StopCoroutine(linkedRoomRoutine);
+                linkedRoomRoutine = null;
+            }
+            
+            roomPreview?.Close();
         }
 
         void Start()
@@ -88,12 +98,15 @@ namespace Kodimodi.UI
 
             if (RoomCode != null)
             {
-                // Пришли по ссылке: заходим в лобби как обычный игрок
-                SetMatchLink(RoomCode);
-                SwitchModal("search");
-                HideButtons();
-                modal.TurnOn();
-                ConnectLobby(hostToken: null);
+                if (roomPreview == null)
+                {
+                    Debug.LogError(
+                        "Назначь RoomPreviewController в CreateMatch.",
+                        this);
+                    return;
+                }
+
+                roomPreview.Show(RoomCode);
             }
             else
             {
@@ -101,14 +114,80 @@ namespace Kodimodi.UI
             }
         }
 
+        public void JoinLinkedRoomAfterMediaCheck()
+        {
+            if (roomPreview == null ||
+                !roomPreview.IsPreviewing ||
+                !roomPreview.IsAwaitingMedia ||
+                string.IsNullOrEmpty(RoomCode))
+            {
+                return;
+            }
+
+            roomPreview.Close();
+
+            SwitchModal("search");
+            HideButtons();
+            cancelMatchBtnUI.SetActive(true);
+
+            ConnectLobby(hostToken: null);
+        }
+        
         // ---------- Создание комнаты ----------
 
         public void OnCreateMatch()
         {
+            if (roomPreview != null && roomPreview.IsPreviewing)
+                return;
+            if (waitingForLinkedRoom) return;
             if (isBusy || playersCount < 2) return;
             StartCoroutine(CreateRoomRoutine());
         }
 
+        private IEnumerator WaitForLinkedRoomCamera()
+        {
+            // Даём StartCoroutine сохранить ссылку на корутину.
+            yield return null;
+
+            while (waitingForLinkedRoom)
+            {
+                if (profileController == null ||
+                    !profileController.isActiveAndEnabled)
+                {
+                    break;
+                }
+
+                if (profileController.IsCameraReady)
+                {
+                    // Камера готова, но решение о допуске принимает
+                    // существующая проверка камеры И микрофона.
+                    profileController.OnPlayButtonClick();
+                    break;
+                }
+
+                yield return null;
+            }
+
+            linkedRoomRoutine = null;
+        }
+
+// Вызывается событием On On окна создания матча.
+        public void OnProfileMediaApproved()
+        {
+            if (!waitingForLinkedRoom ||
+                profileController == null ||
+                !profileController.IsCameraReady)
+            {
+                return;
+            }
+
+            waitingForLinkedRoom = false;
+
+            SwitchModal("search");
+            HideButtons();
+            ConnectLobby(hostToken: null);
+        }
+        
         private IEnumerator CreateRoomRoutine()
         {
             isBusy = true;
@@ -201,6 +280,13 @@ namespace Kodimodi.UI
 
         public void OnCancelMatchSearch()
         {
+            if (roomPreview != null && roomPreview.IsPreviewing)
+            {
+                roomPreview.Close();
+                ResetToCreate();
+                return;
+            }
+            
             if (IsHost)
             {
                 // сервер разошлёт RoomClosed("cancelled") всем, включая нас

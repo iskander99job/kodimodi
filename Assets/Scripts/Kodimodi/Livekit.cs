@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using LiveKit;
@@ -10,50 +11,232 @@ namespace Kodimodi
     {
         private static string LivekitURL = "ws://localhost:7880";
 
-        private readonly Dictionary<TrackPublication, RawImage> mVideos = new();
+        private const float ConnectionRetryInterval = 2f;
+        private const float VideoBindInterval = 0.25f;
+
+        [SerializeField]
+        private BattleCameraGuard cameraGuard;
+
+        private sealed class VideoBinding
+        {
+            public Track Track;
+            public string Identity;
+
+            public RawImage Image;
+            public HTMLVideoElement Video;
+
+            public HTMLVideoElement.VideoReceivedDelegate VideoReceived;
+        }
+
+        private readonly Dictionary<TrackPublication, VideoBinding>
+            videoBindings =
+                new Dictionary<TrackPublication, VideoBinding>();
+
+        private readonly HashSet<Track> attachedTracks =
+            new HashSet<Track>();
+
         private Room mRoom;
-        
+        private LivekitCameraMonitor monitor;
+
         private int localId;
         private string roomToken;
-        
-        private readonly HashSet<Track> attachedTracks = new();
+
         private bool disconnecting;
-        
+        private bool retryConnectionRequested;
+
+        private float nextVideoBind;
+
         public void ConnectToRoom(int localId, string roomToken)
         {
             DisconnectFromRoom();
+
             disconnecting = false;
-            
+
             this.localId = localId;
             this.roomToken = roomToken;
-            
-            StartCoroutine(ConnectRoutine());
+
+            nextVideoBind = 0f;
+
+            if (cameraGuard == null)
+                cameraGuard = GetComponent<BattleCameraGuard>();
+
+            monitor = GetComponent<LivekitCameraMonitor>();
+
+            if (cameraGuard == null || monitor == null)
+            {
+                Debug.LogError(
+                    "Добавь BattleCameraGuard и LivekitCameraMonitor " +
+                    "на объект BattleClient.",
+                    this);
+
+                GetComponent<BattleClient>()?.Leave();
+                return;
+            }
+
+            if (cameraGuard.BeginWatch())
+                StartCoroutine(ConnectRoutine());
         }
-        
+
         private IEnumerator ConnectRoutine()
         {
-            // New Room must be called when WebGL assembly is loaded
-            mRoom = new Room();
-
-             // mRoom.LocalTrackPublished +=
-             //     (publication, participant) => HandleAddedTrack(publication.Track, publication);
-             // mRoom.LocalTrackUnpublished +=
-             //     (publication, participant) => HandleRemovedTrack(publication.Track, publication);
-             mRoom.TrackSubscribed += OnTrackSubscribed;
-             mRoom.TrackUnsubscribed += OnTrackUnsubscribed;
-
-            var c = mRoom.Connect(LivekitURL, roomToken);
-            yield return c;
-
-            if (disconnecting || c.IsError)
+            while (!disconnecting)
             {
-                Debug.Log("Failed to connect to the room!");
-                yield break;
+                // Переподключение не сбрасывает
+                // отсчёт BattleCameraGuard.
+                CloseCurrentRoom();
+
+                retryConnectionRequested = false;
+
+                var connection = TryConnect();
+                var expected = mRoom;
+
+                if (connection != null)
+                    yield return connection;
+
+                if (disconnecting ||
+                    !ReferenceEquals(expected, mRoom))
+                {
+                    yield break;
+                }
+
+                if (connection == null ||
+                    connection.IsError ||
+                    expected.State != ConnectionState.Connected)
+                {
+                    cameraGuard.OnBattleVideoError("network");
+
+                    CloseCurrentRoom();
+
+                    yield return WaitForConnectionRetry();
+                    continue;
+                }
+
+                var camera = TryOperation(
+                    () => expected.LocalParticipant
+                        .SetCameraEnabled(true),
+                    "Камера не запустилась.");
+
+                if (camera != null)
+                    yield return camera;
+
+                if (disconnecting ||
+                    !ReferenceEquals(expected, mRoom))
+                {
+                    yield break;
+                }
+
+                monitor.InitialCameraAttemptFinished(
+                    camera == null || camera.IsError);
+
+                // Ошибка микрофона не блокирует игру.
+                StartCoroutine(EnableMicrophone(expected));
+
+                // Во время Reconnecting восстановление
+                // выполняет сам SDK.
+                while (!disconnecting &&
+                       ReferenceEquals(expected, mRoom) &&
+                       expected.State != ConnectionState.Disconnected)
+                {
+                    yield return null;
+                }
+
+                if (disconnecting)
+                    yield break;
+
+                cameraGuard.OnBattleVideoError("network");
+
+                CloseCurrentRoom();
+
+                yield return WaitForConnectionRetry();
             }
-            
-            Debug.Log("Connected to the room");
-            
-            yield return mRoom.LocalParticipant.EnableCameraAndMicrophone();
+        }
+
+        private JSPromise TryConnect()
+        {
+            try
+            {
+                mRoom = new Room();
+
+                mRoom.TrackSubscribed += OnTrackSubscribed;
+                mRoom.TrackUnsubscribed += OnTrackUnsubscribed;
+
+                monitor.Bind(mRoom);
+
+                return mRoom.Connect(LivekitURL, roomToken);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(
+                    "LiveKit connect failed: " + e.Message);
+
+                cameraGuard.OnBattleVideoError("network");
+                return null;
+            }
+        }
+
+        private JSPromise TryOperation(
+            Func<JSPromise> operation,
+            string message)
+        {
+            try
+            {
+                return operation();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(message + " " + e.Message);
+                return null;
+            }
+        }
+
+        private IEnumerator EnableMicrophone(Room expected)
+        {
+            var microphone = TryOperation(
+                () => expected.LocalParticipant
+                    .SetMicrophoneEnabled(true),
+                "Микрофон недоступен. Игра продолжается.");
+
+            if (microphone == null)
+                yield break;
+
+            yield return microphone;
+
+            if (!disconnecting &&
+                ReferenceEquals(expected, mRoom) &&
+                microphone.IsError)
+            {
+                Debug.LogWarning(
+                    "Микрофон недоступен. Игра продолжается.");
+            }
+        }
+
+        private IEnumerator WaitForConnectionRetry()
+        {
+            float nextAttempt =
+                Time.unscaledTime + ConnectionRetryInterval;
+
+            while (!disconnecting &&
+                   !retryConnectionRequested &&
+                   Time.unscaledTime < nextAttempt)
+            {
+                yield return null;
+            }
+        }
+
+        public void RetryCamera()
+        {
+            if (disconnecting)
+                return;
+
+            if (mRoom != null &&
+                mRoom.State == ConnectionState.Connected)
+            {
+                monitor.RetryCamera();
+            }
+            else
+            {
+                retryConnectionRequested = true;
+            }
         }
 
         private void OnTrackSubscribed(
@@ -71,115 +254,279 @@ namespace Kodimodi
         {
             HandleRemovedTrack(track, publication);
         }
-        
-        private void HandleAddedTrack(Track track, TrackPublication publication, Participant participant)
+
+        private void HandleAddedTrack(
+            Track track,
+            TrackPublication publication,
+            Participant participant)
         {
-            if (disconnecting || !attachedTracks.Add(track))
+            if (disconnecting)
                 return;
-            
+
             if (track.Kind == TrackKind.Video)
             {
                 if (localId.ToString() == participant.Identity)
-                {
                     return;
-                }
-                
-                GameObject obj = GameObject.Find("Player_" + participant.Identity);
-                
-                if (obj != null)
-                {
-                    RawImage image = obj.GetComponentInChildren<RawImage>(true);
-                    if (image == null) return;
-                    
-                    var video = track.Attach() as HTMLVideoElement;
-                
-                    if (video != null)
-                    {
-                        mVideos[publication] = image;
-                        image.texture = video.Texture;
 
-                        video.VideoReceived += tex =>
-                        {
-                            if (!disconnecting && image != null)
-                                image.texture = tex;
-                        };
+                if (videoBindings.TryGetValue(
+                        publication, out var previous))
+                {
+                    if (ReferenceEquals(previous.Track, track))
+                    {
+                        TryBindVideo(publication, previous);
+                        return;
                     }
+
+                    videoBindings.Remove(publication);
+                    ReleaseVideo(previous);
+                }
+
+                // Сохраняем трек, даже если персонаж
+                // или его RawImage пока не появились.
+                var binding = new VideoBinding
+                {
+                    Track = track,
+                    Identity = participant.Identity
+                };
+
+                videoBindings[publication] = binding;
+
+                TryBindVideo(publication, binding);
+            }
+            else if (
+                track.Kind == TrackKind.Audio &&
+                publication is RemoteTrackPublication &&
+                !attachedTracks.Contains(track))
+            {
+                track.Attach();
+                attachedTracks.Add(track);
+            }
+        }
+
+        private void Update()
+        {
+            if (disconnecting ||
+                Time.unscaledTime < nextVideoBind)
+            {
+                return;
+            }
+
+            nextVideoBind =
+                Time.unscaledTime + VideoBindInterval;
+
+            foreach (var pair in videoBindings)
+            {
+                var binding = pair.Value;
+
+                // Уничтоженный Unity-объект также равен null.
+                // Работающую привязку повторно не ищем.
+                if (binding.Image == null ||
+                    binding.Video == null)
+                {
+                    TryBindVideo(pair.Key, binding);
                 }
             }
-            else if (track.Kind == TrackKind.Audio && publication is RemoteTrackPublication)
+        }
+
+        private void TryBindVideo(
+            TrackPublication publication,
+            VideoBinding binding)
+        {
+            if (binding.Image == null)
             {
-                Debug.Log($"Audio track from participant: {participant.Identity}");
-                track.Attach();
+                var player = GameObject.Find(
+                    "Player_" + binding.Identity);
+
+                if (player == null)
+                    return;
+
+                binding.Image =
+                    player.GetComponentInChildren<RawImage>(true);
+
+                if (binding.Image == null)
+                    return;
             }
+
+            if (binding.Video == null)
+            {
+                binding.Video =
+                    binding.Track.Attach() as HTMLVideoElement;
+
+                if (binding.Video == null)
+                    return;
+
+                attachedTracks.Add(binding.Track);
+
+                binding.VideoReceived = texture =>
+                {
+                    if (!disconnecting &&
+                        videoBindings.TryGetValue(
+                            publication, out var current) &&
+                        ReferenceEquals(current, binding))
+                    {
+                        ApplyVideoTexture(
+                            binding.Image, texture);
+                    }
+                };
+
+                binding.Video.VideoReceived +=
+                    binding.VideoReceived;
+            }
+
+            // При замене головы используем тот же видеотрек
+            // и его текущую текстуру.
+            ApplyVideoTexture(
+                binding.Image, binding.Video.Texture);
+        }
+
+        private static void ApplyVideoTexture(
+            RawImage image,
+            Texture texture)
+        {
+            if (image == null)
+                return;
+
+            image.texture = texture;
+            image.uvRect = new Rect(0f, 0f, 1f, 1f);
+
+            if (texture == null ||
+                texture.width <= 0 ||
+                texture.height <= 0)
+            {
+                return;
+            }
+
+            Rect rect = image.rectTransform.rect;
+
+            float targetAspect =
+                rect.width > 0f && rect.height > 0f
+                    ? rect.width / rect.height
+                    : 1f;
+
+            float sourceAspect =
+                (float)texture.width / texture.height;
+
+            float cropWidth =
+                Mathf.Min(1f, targetAspect / sourceAspect);
+
+            float cropHeight =
+                Mathf.Min(1f, sourceAspect / targetAspect);
+
+            image.uvRect = new Rect(
+                (1f - cropWidth) * 0.5f,
+                (1f - cropHeight) * 0.5f,
+                cropWidth,
+                cropHeight);
         }
 
         private void HandleRemovedTrack(
             Track track,
             TrackPublication publication)
         {
-            attachedTracks.Remove(track);
-            track.Detach();
-
-            if (mVideos.TryGetValue(publication, out var view))
+            if (videoBindings.TryGetValue(
+                    publication, out var binding) &&
+                ReferenceEquals(binding.Track, track))
             {
-                if (view != null)
-                    view.texture = null;
-
-                mVideos.Remove(publication);
+                videoBindings.Remove(publication);
+                ReleaseVideo(binding);
+            }
+            else
+            {
+                // Запоздалое событие старого трека
+                // не должно удалить новую привязку.
+                DetachTrack(track);
             }
         }
-        
-        public void DisconnectFromRoom()
+
+        private void ReleaseVideo(VideoBinding binding)
         {
-            if (disconnecting) return;
-            disconnecting = true;
-
-            StopAllCoroutines();
-
-            foreach (var view in mVideos.Values)
+            if (binding.Video != null)
             {
-                if (view != null)
-                    view.texture = null;
+                binding.Video.VideoReceived -=
+                    binding.VideoReceived;
+
+                if (binding.Image != null &&
+                    binding.Image.texture ==
+                    binding.Video.Texture)
+                {
+                    ApplyVideoTexture(binding.Image, null);
+                }
             }
 
-            mVideos.Clear();
+            binding.Image = null;
+            binding.Video = null;
+            binding.VideoReceived = null;
+
+            DetachTrack(binding.Track);
+        }
+
+        private void DetachTrack(Track track)
+        {
+            if (!attachedTracks.Remove(track))
+                return;
+
+            try
+            {
+                track.Detach();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e.Message);
+            }
+        }
+
+        private void CloseCurrentRoom()
+        {
+            monitor?.Unbind();
+
+            foreach (var binding in videoBindings.Values)
+                ReleaseVideo(binding);
+
+            videoBindings.Clear();
 
             foreach (var track in new List<Track>(attachedTracks))
-            {
-                try
-                {
-                    track.Detach();
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning(e.Message);
-                }
-            }
-
-            attachedTracks.Clear();
+                DetachTrack(track);
 
             var room = mRoom;
             mRoom = null;
 
-            if (room != null)
-            {
-                room.TrackSubscribed -= OnTrackSubscribed;
-                room.TrackUnsubscribed -= OnTrackUnsubscribed;
+            if (room == null)
+                return;
 
-                try
-                {
-                    // true — остановить также локальную камеру и микрофон.
-                    room.Disconnect(true);
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning(e.Message);
-                }
+            room.TrackSubscribed -= OnTrackSubscribed;
+            room.TrackUnsubscribed -= OnTrackUnsubscribed;
+
+            try
+            {
+                room.Disconnect(true);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e.Message);
             }
         }
 
-        private void OnDestroy() => DisconnectFromRoom();
+        public void DisconnectFromRoom()
+        {
+            if (disconnecting)
+                return;
 
-        private void OnApplicationQuit() => DisconnectFromRoom();
+            disconnecting = true;
+
+            StopAllCoroutines();
+            CloseCurrentRoom();
+
+            cameraGuard?.EndWatch();
+        }
+
+        private void OnDestroy()
+        {
+            DisconnectFromRoom();
+        }
+
+        private void OnApplicationQuit()
+        {
+            DisconnectFromRoom();
+        }
     }
 }

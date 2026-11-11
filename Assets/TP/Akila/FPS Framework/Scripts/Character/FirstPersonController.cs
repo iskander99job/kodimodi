@@ -55,6 +55,7 @@ namespace Akila.FPSFramework
         //TODO: Fix air control additive bug where speed increases if you move in the direction as your momentum
 
         private const float airControl = 0;
+        private bool videoMovementBlocked;
 
         [Header("Slopes")]
         [Tooltip("If true, the player will slide down steep slopes automatically.")]
@@ -355,6 +356,12 @@ namespace Akila.FPSFramework
         protected virtual void Update()
         {            
             if (!isActive || frozenForDeath) return;
+            
+            if (videoMovementBlocked)
+            {
+                ClearMotionForRespawn();
+                return;
+            }
 
             if(leanRightAnimation)
             {
@@ -503,7 +510,9 @@ namespace Akila.FPSFramework
             //The character manager uses these info to invoke OnJump or OnLand events
             //Other components use the walkSpeed and sprintSpeed values to calculate certain things
             characterManager.SetValues(
-                frozenForDeath ? Vector3.zero : controller.velocity,
+                (frozenForDeath || videoMovementBlocked)
+                    ? Vector3.zero
+                    : controller.velocity,
                 controller.isGrounded,
                 walkSpeed,
                 sprintSpeed);
@@ -537,11 +546,19 @@ namespace Akila.FPSFramework
 
         public virtual void FixedUpdate()
         {
-            if (frozenForDeath) return;
+            if (frozenForDeath || videoMovementBlocked) return;
             //update step sounds
             ProgressStepCycle();
         }
 
+        public void SetVideoMovementBlocked(bool blocked)
+        {
+            videoMovementBlocked = blocked;
+
+            if (Orientation != null && !frozenForDeath)
+                ClearMotionForRespawn();
+        }
+        
         protected virtual void ProgressStepCycle()
         {
             //stop if not grounded

@@ -6,7 +6,6 @@ using UnityEngine.Events;
 
 namespace Kodimodi
 {
-    // Компонент только для локального управляемого игрока.
     [DefaultExecutionOrder(10000)]
     public class NetworkRespawn : MonoBehaviour
     {
@@ -41,6 +40,7 @@ namespace Kodimodi
         private Vector3 eyeOffset;
         private Quaternion startRotation;
         private Quaternion endRotation;
+
         private Camera hiddenWeaponCamera;
         private bool weaponCameraWasEnabled;
 
@@ -81,9 +81,9 @@ namespace Kodimodi
 
         private void OnDeath()
         {
-            if (dead) return;
+            if (dead)
+                return;
 
-            // Сохраняем скорость до остановки контроллера.
             Vector3 initialVelocity = controller.velocity;
 
             FPSFrameworkCore.IsInputActive = false;
@@ -108,6 +108,7 @@ namespace Kodimodi
                 Debug.LogError(
                     "Укажи CameraRoot и Main Camera в NetworkRespawn.",
                     this);
+
                 return;
             }
 
@@ -120,7 +121,7 @@ namespace Kodimodi
                 weaponCameraWasEnabled = hiddenWeaponCamera.enabled;
                 hiddenWeaponCamera.enabled = false;
             }
-            
+
             foreach (var animator in
                      cameraRoot.GetComponentsInChildren<
                          ProceduralAnimator>(true))
@@ -139,6 +140,7 @@ namespace Kodimodi
             savedLocalRotation = cameraRoot.localRotation;
 
             startRotation = cameraRoot.rotation;
+
             endRotation = startRotation *
                 Quaternion.Euler(-10f, 0, rollAngle);
 
@@ -147,17 +149,14 @@ namespace Kodimodi
             eyeOffset = Quaternion.Inverse(startRotation) *
                 (eye - cameraRoot.position);
 
-            // Отдельный физический объект, без Renderer.
             var bodyObject =
                 new GameObject("Local Death Camera Physics");
 
             bodyObject.layer = physicsLayer;
             bodyObject.transform.position = eye;
 
-            var sphere =
-                bodyObject.AddComponent<SphereCollider>();
+            var sphere = bodyObject.AddComponent<SphereCollider>();
 
-            // Запас для углов ближней плоскости камеры.
             float near = mainCamera.nearClipPlane;
 
             float h = near * Mathf.Tan(
@@ -169,25 +168,21 @@ namespace Kodimodi
                 bodyRadius,
                 Mathf.Sqrt(near * near + h * h + w * w) + 0.02f);
 
-            // Сфера не сталкивается со своим персонажем.
             foreach (var ownCollider in
                      GetComponentsInChildren<Collider>(true))
             {
                 Physics.IgnoreCollision(
-                    sphere, ownCollider, true);
+                    sphere,
+                    ownCollider,
+                    true);
             }
 
             deathBody = bodyObject.AddComponent<Rigidbody>();
 
             deathBody.mass = 1f;
             deathBody.useGravity = true;
-
-            // Физика управляет позицией, наклон задаём отдельно.
-            deathBody.constraints =
-                RigidbodyConstraints.FreezeRotation;
-
-            deathBody.interpolation =
-                RigidbodyInterpolation.Interpolate;
+            deathBody.constraints = RigidbodyConstraints.FreezeRotation;
+            deathBody.interpolation = RigidbodyInterpolation.Interpolate;
 
             deathBody.collisionDetectionMode =
                 CollisionDetectionMode.ContinuousDynamic;
@@ -223,13 +218,12 @@ namespace Kodimodi
                 -elapsed / Mathf.Max(0.05f, rollTime));
 
             Quaternion rotation = Quaternion.Slerp(
-                startRotation, endRotation, t);
+                startRotation,
+                endRotation,
+                t);
 
-            // Учитываем вложенность Main Camera:
-            // её позиция совпадает с позицией физической сферы.
             cameraRoot.SetPositionAndRotation(
-                deathBody.transform.position -
-                rotation * eyeOffset,
+                deathBody.transform.position - rotation * eyeOffset,
                 rotation);
         }
 
@@ -239,7 +233,8 @@ namespace Kodimodi
             {
                 hiddenWeaponCamera.enabled = weaponCameraWasEnabled;
                 hiddenWeaponCamera = null;
-            } 
+            }
+
             if (deathBody != null)
             {
                 deathBody.gameObject.SetActive(false);
@@ -266,9 +261,10 @@ namespace Kodimodi
 
         public void Respawn(Vector3 position)
         {
-            if (BattleClient.Instance != null &&
-                (BattleClient.Instance.IsMatchEnded ||
-                 BattleClient.Instance.IsDisconnected))
+            var battle = BattleClient.Instance;
+
+            if (battle != null &&
+                (battle.IsMatchEnded || battle.IsDisconnected))
             {
                 return;
             }
@@ -284,7 +280,9 @@ namespace Kodimodi
             movement.ResetAfterNetworkRespawn();
             damageable.ResetForRespawn();
 
-            FPSFrameworkCore.IsInputActive = true;
+            // Респавн не снимает блокировку из-за отсутствия видео.
+            FPSFrameworkCore.IsInputActive =
+                battle == null || battle.CanPlay;
         }
     }
 }

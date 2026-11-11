@@ -14,8 +14,6 @@ namespace Kodimodi
     {
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private GameObject playerPrefab, enemyPrefab;
-        // Куда вернуться, если сервер отклонил вход. Пусто: только лог
-        [SerializeField] private string menuSceneName = "";
 
         private readonly Dictionary<int, RemotePlayerVisuals> spawned = new();
         public IReadOnlyDictionary<int, RemotePlayerVisuals> Spawned => spawned;
@@ -57,12 +55,33 @@ namespace Kodimodi
         private float lastReceivedAt;
         private float nextHeartbeatAt;
 
+        public bool VideoMovementBlocked { get; private set; }
+
+        public bool CanPublishPlayerState =>
+            !IsMatchEnded &&
+            !IsDisconnected &&
+            !leaving &&
+            localDamageable != null &&
+            localDamageable.health > 0f;
+
         public bool CanPlay =>
-            !IsMatchEnded
-            && !IsDisconnected
-            && !leaving
-            && localDamageable != null
-            && localDamageable.health > 0f;
+            CanPublishPlayerState && !VideoMovementBlocked;
+
+        public void SetVideoMovementBlocked(bool blocked)
+        {
+            VideoMovementBlocked = blocked;
+
+            if (localPlayer == null)
+                return;
+
+            localPlayer.GetComponent<FirstPersonController>()
+                ?.SetVideoMovementBlocked(blocked);
+
+            var input = localPlayer.GetComponent<CharacterInput>();
+
+            if (input != null)
+                input.VideoInputBlocked = blocked;
+        }
 
         public MatchEndedModel FinalResult { get; private set; }
 
@@ -358,7 +377,7 @@ namespace Kodimodi
                 }
             }
 
-            //GetComponent<Livekit>().ConnectToRoom(this.id, livekitToken);
+            GetComponent<Livekit>().ConnectToRoom(id, livekitToken);
         }
 
         private void HandleShoot(WsEnvelopeModel model)
@@ -462,7 +481,7 @@ namespace Kodimodi
 
         private void LateUpdate()
         {
-            if (IsMatchEnded || IsDisconnected)
+            if (IsMatchEnded || IsDisconnected || VideoMovementBlocked)
                 FPSFrameworkCore.IsInputActive = false;
         }
 
@@ -522,7 +541,7 @@ namespace Kodimodi
             // Устанавливаем до закрытия сокета, чтобы обычный выход
             // не считался потерей соединения.
             leaving = true;
-
+            GetComponent<BattleCameraGuard>()?.EndWatch();
             GetComponent<Livekit>()?.DisconnectFromRoom();
 
             var socket = websocket;
