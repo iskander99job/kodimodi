@@ -88,21 +88,21 @@ namespace Akila.FPSFramework.Internal
                                 StatusMessage = $"Update available! New version: {remote.version}";
 
 #if UNITY_EDITOR
-                                bool isUserWantToUpdate = EditorUtility.DisplayDialog(
-                                    "Update Available",
-                                    $"A new version of FPSF is available (v{remote.version}).\n\nWould you like to open the UAS to update now?",
-                                    "Update Now",
-                                    "Later"
-                                );
-
-                                if(isUserWantToUpdate)
-                                {
-                                    Application.OpenURL(FPSFrameworkSettings.preset.url);
-                                }
-                                else
-                                {
-                                    FPSFrameworkSettings.preset.checkForUpdateThiSession = false;
-                                }
+//                                 bool isUserWantToUpdate = EditorUtility.DisplayDialog(
+//                                     "Update Available",
+//                                     $"A new version of FPSF is available (v{remote.version}).\n\nWould you like to open the UAS to update now?",
+//                                     "Update Now",
+//                                     "Later"
+//                                 );
+//
+//                                 if(isUserWantToUpdate)
+//                                 {
+//                                     Application.OpenURL(FPSFrameworkSettings.preset.url);
+//                                 }
+//                                 else
+//                                 {
+//                                     FPSFrameworkSettings.preset.checkForUpdateThiSession = false;
+//                                 }
 #endif
                             }
                             else
