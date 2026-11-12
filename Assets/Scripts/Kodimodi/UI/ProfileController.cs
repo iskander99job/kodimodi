@@ -1,552 +1,271 @@
-using System;
 using System.Collections;
-using System.Runtime.InteropServices;
 using Lean.Gui;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Kodimodi.UI
 {
     public class ProfileController : MonoBehaviour
     {
-        [Header("Видео головы")]
-        [SerializeField] private RawImage rawImage;
-        [SerializeField] private Image rawImageMask;
-        [SerializeField] private bool mirrorPreview = true;
-
-        [Header("Popup камеры")]
-        [SerializeField] private LeanWindow cameraPopup;
-        [SerializeField] private TMP_Text cameraPopupText;
-        [SerializeField] private LeanButton enableCameraButton;
+        [Header("Главный экран")]
+        [SerializeField] private GameObject playButton;
+        [SerializeField] private GameObject deviceSetupUI;
+        [SerializeField] private GameObject matchLobbyUI;
 
         [Header("Создание матча")]
         [SerializeField] private LeanWindow createMatchModal;
 
-        [Header("Инструкция по разрешениям")]
-        [SerializeField] private Image permissionHelpImage;
-        [SerializeField] private Sprite chromePermissionSprite;
-        [SerializeField] private Sprite safariPermissionSprite;
-        [SerializeField] private Sprite firefoxPermissionSprite;
-        [SerializeField] private Sprite edgePermissionSprite;
-        [SerializeField] private Sprite fallbackPermissionSprite;
+        private MediaAccessController mediaAccess;
+        private WebcamPreviewController webcamPreview;
+        private PermissionHelpView permissionHelp;
+        private LobbyClient lobbyClient;
+        private DeviceSetupView deviceView;
 
-        private WebCamTexture webcamTexture;
         private Coroutine cameraRoutine;
-        private Quaternion initialRotation;
 
-        private bool cameraReady;
-        private bool cameraPermissionGranted;
-        private bool microphoneGranted;
-        private bool mediaPermissionPending;
-        private bool playPermissionCheckPending;
-        private bool permissionHelpVisible;
-
-        private string browserName = "unknown";
+        private bool stopping;
+        private bool playRequested;
+        private bool devicesRequested;
+        private bool mediaWasReady;
 
         public bool IsCameraReady =>
-            cameraReady &&
-            webcamTexture != null &&
-            webcamTexture.isPlaying;
+            webcamPreview != null &&
+            webcamPreview.isActiveAndEnabled &&
+            webcamPreview.IsReady;
 
-        private bool IsMediaReady =>
-            cameraPermissionGranted &&
-            microphoneGranted &&
+        public bool MediaReady =>
+            mediaAccess != null &&
+            mediaAccess.isActiveAndEnabled &&
+            mediaAccess.CameraGranted &&
+            mediaAccess.MicrophoneGranted &&
             IsCameraReady;
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private static extern void DetectMediaBrowser(string receiver);
+        public bool CameraStarting => cameraRoutine != null;
 
-        [DllImport("__Internal")]
-        private static extern void CheckCameraPermission(string receiver);
+        public bool DeviceOperationPending =>
+            CameraStarting ||
+            (mediaAccess != null && mediaAccess.RequestPending);
 
-        [DllImport("__Internal")]
-        private static extern void RequestCameraAndMicrophone(
-            string receiver,
-            int requestVideo);
-
-        [DllImport("__Internal")]
-        private static extern void StopMediaPermissionWatch(string receiver);
-#endif
+        private bool CanUpdateUI =>
+            !stopping &&
+            isActiveAndEnabled &&
+            mediaAccess != null &&
+            mediaAccess.isActiveAndEnabled &&
+            webcamPreview != null &&
+            webcamPreview.isActiveAndEnabled &&
+            lobbyClient != null &&
+            lobbyClient.isActiveAndEnabled;
 
         private void Awake()
         {
-            if (rawImage == null)
+            mediaAccess =
+                FindAnyObjectByType<MediaAccessController>();
+
+            webcamPreview =
+                FindAnyObjectByType<WebcamPreviewController>();
+
+            lobbyClient =
+                FindAnyObjectByType<LobbyClient>();
+
+            permissionHelp =
+                FindAnyObjectByType<PermissionHelpView>(
+                    FindObjectsInactive.Include);
+
+            if (deviceSetupUI != null)
+                deviceView = deviceSetupUI.GetComponent<DeviceSetupView>();
+
+            if (mediaAccess == null ||
+                webcamPreview == null ||
+                lobbyClient == null ||
+                deviceView == null)
             {
                 Debug.LogError(
-                    "Назначь RawImage головы в ProfileController.",
+                    "ProfileController: проверь активные MediaAccess, " +
+                    "WebcamPreview, Lobby и компонент DeviceSetupView " +
+                    "на объекте DeviceSetupUI.",
                     this);
 
                 enabled = false;
                 return;
             }
 
-            initialRotation = rawImage.rectTransform.localRotation;
+            // Передаём зависимости, даже если DeviceSetupUI выключен.
+            deviceView.Bind(this, mediaAccess, permissionHelp);
 
-            HideVideo();
-            HidePermissionHelp();
-            UpdateButtons();
+            if (createMatchModal != null)
+                createMatchModal.TurnOff();
+
+            // При обычном входе сначала показывается Play.
+            SetVisible(deviceSetupUI, false);
+            SetVisible(matchLobbyUI, false);
+            SetVisible(playButton, true);
         }
 
         private void OnEnable()
         {
-            if (rawImage == null)
-                return;
-
-            cameraPermissionGranted = false;
-            microphoneGranted = false;
-            mediaPermissionPending = false;
-            playPermissionCheckPending = false;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            DetectMediaBrowser(gameObject.name);
-            CheckCameraPermission(gameObject.name);
-#else
-            // В редакторе достаточно камеры.
-            microphoneGranted = true;
-
-            if (Application.HasUserAuthorization(UserAuthorization.WebCam))
-            {
-                cameraPermissionGranted = true;
-                StartCamera();
-            }
-#endif
-        }
-
-        public void OnBrowserDetected(string browser)
-        {
-            if (!isActiveAndEnabled)
-                return;
-
-            browserName = browser;
-
-            if (permissionHelpVisible)
-                UpdatePermissionHelpImage();
-        }
-
-        public void OnMediaPermissionsChecked(string result)
-        {
-            if (!isActiveAndEnabled)
-                return;
-
-            string[] states = result.Split('|');
-
-            if (states.Length != 2)
-                return;
-
-            bool cameraUnavailable =
-                states[0] == "denied" ||
-                states[0] == "prompt";
-
-            bool microphoneUnavailable =
-                states[1] == "denied" ||
-                states[1] == "prompt";
-
-            bool cameraRevoked =
-                (cameraPermissionGranted || IsCameraReady) &&
-                cameraUnavailable;
-
-            bool microphoneRevoked =
-                microphoneGranted &&
-                microphoneUnavailable;
-
-            // unknown не означает запрет:
-            // браузер мог не поддержать проверку.
-            if (states[0] != "unknown")
-                cameraPermissionGranted = states[0] == "granted";
-
-            if (states[1] != "unknown")
-                microphoneGranted = states[1] == "granted";
-
-            // Запрещённую камеру останавливаем до проверки готовности.
-            if (cameraUnavailable)
-                CancelCameraStartupAndStop();
-
-            // Пока открыт запрос устройств, не запускаем второй захват.
-            if (mediaPermissionPending)
-            {
-                UpdateButtons();
-                return;
-            }
-
-            if (cameraPermissionGranted)
-                StartCamera();
-
-            if (playPermissionCheckPending)
-            {
-                playPermissionCheckPending = false;
-                ShowPlayResult();
-            }
-            else if (cameraRevoked || microphoneRevoked)
-            {
-                ShowMediaWarning();
-            }
-            else if (IsMediaReady)
-            {
-                cameraPopup.TurnOff();
-            }
-
-            UpdateButtons();
-        }
-
-        public void OnPlayButtonClick()
-        {
-            if (!isActiveAndEnabled)
-                return;
-
-            if (mediaPermissionPending)
-            {
-                ShowPendingPermissionMessage();
-                cameraPopup.TurnOn();
-                return;
-            }
-
-            if (playPermissionCheckPending)
-                return;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            playPermissionCheckPending = true;
-            CheckCameraPermission(gameObject.name);
-#else
-            ShowPlayResult();
-#endif
-
-            UpdateButtons();
-        }
-
-        private void ShowPlayResult()
-        {
-            if (IsMediaReady)
-            {
-                cameraPopup.TurnOff();
-                createMatchModal.TurnOn();
-                return;
-            }
-
-            if (cameraPermissionGranted && microphoneGranted)
-            {
-                SetMessage(
-                    cameraRoutine != null
-                        ? "Ожидаем изображение с камеры…"
-                        : "Не удалось запустить камеру.\n\n" +
-                          "Нажми «Включить / проверить снова».");
-
-                cameraPopup.TurnOn();
-                return;
-            }
-
-            ShowMediaWarning();
-        }
-
-        public void EnableWebCam()
-        {
-            if (!isActiveAndEnabled)
-                return;
-
-            if (mediaPermissionPending)
-            {
-                ShowPendingPermissionMessage();
-                return;
-            }
-
-            if (playPermissionCheckPending || cameraRoutine != null)
-                return;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            mediaPermissionPending = true;
-
-            ShowPendingPermissionMessage();
-            UpdateButtons();
-
-            // Если видео уже работает, запрашиваем только микрофон.
-            // Это позволяет не открывать камеру повторно.
-            RequestCameraAndMicrophone(
-                gameObject.name,
-                IsCameraReady ? 0 : 1);
-#else
-            microphoneGranted = true;
-            cameraPermissionGranted = true;
-            StartCamera();
-#endif
-        }
-
-        private void ShowPendingPermissionMessage()
-        {
-            SetMessage(
-                "Разреши доступ к камере и микрофону " +
-                "в окне браузера.\n\n" +
-                "Если окно скрыто, нажми значок камеры " +
-                "или настроек сайта слева от адреса.");
-        }
-
-        public void OnMediaPermissionRequested(string result)
-        {
-            if (!isActiveAndEnabled)
-                return;
-
-            mediaPermissionPending = false;
-
-            if (result != "granted")
-            {
-                switch (result)
-                {
-                    case "NotAllowedError":
-                    case "PermissionDeniedError":
-                        SetMessage(
-                            "Нет доступа к камере или микрофону.\n\n" +
-                            "Если разрешения сайта уже включены, " +
-                            "проверь доступ браузера к устройствам " +
-                            "в настройках системы.");
-
-                        ShowBrowserPermissionHelp();
-                        break;
-
-                    case "NotFoundError":
-                    case "DevicesNotFoundError":
-                        SetMessage(
-                            "Камера или микрофон не найдены.\n\n" +
-                            "Подключи оба устройства " +
-                            "и повтори попытку.");
-                        break;
-
-                    case "NotReadableError":
-                    case "TrackStartError":
-                        SetMessage(
-                            "Не удалось включить камеру или микрофон.\n\n" +
-                            "Устройство может использоваться " +
-                            "другим приложением. Закрой его " +
-                            "и повтори попытку.");
-                        break;
-
-                    case "unavailable":
-                        SetMessage(
-                            "Браузер не предоставляет доступ " +
-                            "к камере и микрофону.\n\n" +
-                            "Открой игру по HTTPS или localhost " +
-                            "в поддерживаемом браузере.");
-                        break;
-
-                    default:
-                        SetMessage(
-                            "Не удалось получить доступ " +
-                            "к камере и микрофону.\n\n" +
-                            "Проверь устройства и повтори попытку.");
-                        break;
-                }
-
-                cameraPopup.TurnOn();
-                UpdateButtons();
-                return;
-            }
-
-            cameraPermissionGranted = true;
-            microphoneGranted = true;
-
-            if (IsMediaReady)
-                cameraPopup.TurnOff();
-            else
-                StartCamera();
-
-            UpdateButtons();
-        }
-
-        private void StartCamera()
-        {
-            if (!isActiveAndEnabled ||
-                !cameraPermissionGranted ||
-                cameraRoutine != null ||
-                IsCameraReady)
+            if (mediaAccess == null ||
+                webcamPreview == null ||
+                lobbyClient == null ||
+                deviceView == null)
             {
                 return;
             }
 
-            cameraRoutine = StartCoroutine(EnableWebCamRoutine());
-            UpdateButtons();
-        }
+            stopping = false;
+            playRequested = false;
+            devicesRequested = false;
+            mediaWasReady = false;
 
-        private IEnumerator EnableWebCamRoutine()
-        {
-            // Даём StartCoroutine вернуть значение в cameraRoutine
-            // до возможного завершения корутины.
-            yield return null;
+            mediaAccess.Changed += OnMediaChanged;
+            mediaAccess.RequestCompleted += OnRequestCompleted;
 
-            StopCamera();
-
-            try
-            {
-                if (!cameraPermissionGranted)
-                    yield break;
-
-                if (!Application.HasUserAuthorization(
-                        UserAuthorization.WebCam))
-                {
-                    yield return Application.RequestUserAuthorization(
-                        UserAuthorization.WebCam);
-                }
-
-                if (!cameraPermissionGranted)
-                    yield break;
-
-                if (!Application.HasUserAuthorization(
-                        UserAuthorization.WebCam))
-                {
-                    cameraPermissionGranted = false;
-                    ShowMediaWarning();
-                    yield break;
-                }
-
-                string error = TryStartCamera();
-
-                if (error != null)
-                {
-                    SetMessage(error);
-                    cameraPopup.TurnOn();
-                    yield break;
-                }
-
-                SetMessage(
-                    microphoneGranted
-                        ? "Ожидаем изображение с камеры…"
-                        : "Запускаем камеру…\n\n" +
-                          "Для игры также нужен доступ к микрофону.");
-
-                float deadline = Time.realtimeSinceStartup + 15f;
-
-                while (webcamTexture != null &&
-                       (!webcamTexture.didUpdateThisFrame ||
-                        webcamTexture.width <= 16 ||
-                        webcamTexture.height <= 16))
-                {
-                    if (!cameraPermissionGranted)
-                        yield break;
-
-                    if (Time.realtimeSinceStartup >= deadline)
-                    {
-                        StopCamera();
-
-                        SetMessage(
-                            "Камера не начала передавать видео.\n\n" +
-                            "Проверь устройство и попробуй закрыть " +
-                            "другие приложения, использующие камеру.");
-
-                        cameraPopup.TurnOn();
-                        yield break;
-                    }
-
-                    yield return null;
-                }
-
-                if (webcamTexture == null || !cameraPermissionGranted)
-                    yield break;
-
-                rawImage.texture = webcamTexture;
-                rawImage.color = Color.white;
-
-                if (rawImageMask != null)
-                    rawImageMask.color = Color.white;
-
-                UpdateVideoLayout();
-
-                rawImage.enabled = true;
-                cameraReady = true;
-
-                if (IsMediaReady)
-                {
-                    cameraPopup.TurnOff();
-                }
-                else
-                {
-                    // Обновляем текст, но не открываем popup
-                    // автоматически при обычном входе в сцену.
-                    SetMessage(
-                        "Камера работает, но для игры " +
-                        "также нужен доступ к микрофону.");
-
-                    ShowBrowserPermissionHelp();
-                }
-            }
-            finally
-            {
-                cameraRoutine = null;
-                UpdateButtons();
-            }
-        }
-
-        private string TryStartCamera()
-        {
-            try
-            {
-                webcamTexture = new WebCamTexture(640, 480, 20);
-                webcamTexture.Play();
-                return null;
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception, this);
-                StopCamera();
-
-                return
-                    "Не удалось запустить камеру.\n\n" +
-                    "Проверь устройство и разрешение браузера.";
-            }
+            OnMediaChanged();
         }
 
         private void Update()
         {
-            if (!cameraReady || webcamTexture == null)
+            if (!CanUpdateUI)
                 return;
 
-            if (!webcamTexture.isPlaying)
+            if (webcamPreview.HasFrame && !webcamPreview.IsReady)
             {
-                StopCamera();
-                UpdateButtons();
+                webcamPreview.StopPreview();
+
+                if (!lobbyClient.IsLobbyVisible)
+                    devicesRequested = true;
 
                 SetMessage(
                     "Камера остановлена.\n\n" +
-                    "Нажми «Включить / проверить снова».");
+                    "Повтори включение камеры и микрофона.");
 
-                cameraPopup.TurnOn();
-                return;
+                RefreshEntryUI();
             }
-
-            if (webcamTexture.didUpdateThisFrame)
-                UpdateVideoLayout();
         }
 
-        private void UpdateVideoLayout()
+        private void LateUpdate()
         {
-            float width = webcamTexture.width;
-            float height = webcamTexture.height;
+            RefreshEntryUI();
+        }
 
-            if (width <= 16 || height <= 16)
+        private void OnApplicationQuit()
+        {
+            stopping = true;
+        }
+
+        private void OnDisable()
+        {
+            // Ставим до остановки корутины: её finally может выполниться.
+            stopping = true;
+
+            if (mediaAccess != null)
+            {
+                mediaAccess.Changed -= OnMediaChanged;
+                mediaAccess.RequestCompleted -= OnRequestCompleted;
+            }
+
+            playRequested = false;
+            devicesRequested = false;
+            mediaWasReady = false;
+
+            CancelCameraStartupAndStop();
+
+            // Здесь не включаем панели и не обращаемся к popup.
+        }
+
+        // ---------- Состояние разрешений ----------
+
+        private void OnMediaChanged()
+        {
+            if (!CanUpdateUI)
                 return;
 
-            rawImage.rectTransform.localRotation =
-                initialRotation *
-                Quaternion.Euler(
-                    0f, 0f, -webcamTexture.videoRotationAngle);
+            if (permissionHelp != null)
+                permissionHelp.SetBrowser(mediaAccess.BrowserName);
 
-            float cropWidth = Mathf.Min(1f, height / width);
-            float cropHeight = Mathf.Min(1f, width / height);
-
-            float x = (1f - cropWidth) * 0.5f;
-            float y = (1f - cropHeight) * 0.5f;
-
-            if (mirrorPreview)
+            if (!mediaAccess.CameraGranted)
             {
-                x += cropWidth;
-                cropWidth = -cropWidth;
+                CancelCameraStartupAndStop();
+            }
+            else if (mediaAccess.Initialized &&
+                     !mediaAccess.RequestPending)
+            {
+                // Сохранённое разрешение — запускаем видео в фоне.
+                StartCamera();
             }
 
-            if (webcamTexture.videoVerticallyMirrored)
+            RefreshEntryUI();
+        }
+
+        private void OnRequestCompleted(string result)
+        {
+            if (!CanUpdateUI)
+                return;
+
+            if (result != "granted")
+                SetMessage(mediaAccess.LastError);
+
+            RefreshEntryUI();
+        }
+
+        // ---------- Play ----------
+
+        public void OnPlayButtonClick()
+        {
+            if (!CanUpdateUI)
+                return;
+
+            if (lobbyClient.IsLobbyVisible)
+                return;
+
+            playRequested = true;
+
+            if (MediaReady)
             {
-                y += cropHeight;
-                cropHeight = -cropHeight;
+                OpenCreateMatch();
+                RefreshEntryUI();
+                return;
             }
 
-            rawImage.uvRect =
-                new Rect(x, y, cropWidth, cropHeight);
+            // Без работающих устройств создание не открываем.
+            devicesRequested = true;
+            RefreshEntryUI();
+
+            // Проверка разрешений сама не запрашивает доступ.
+            if (!mediaAccess.RequestPending)
+                mediaAccess.CheckPermissions();
+        }
+
+        private void OpenCreateMatch()
+        {
+            if (!CanUpdateUI)
+                return;
+
+            // Повторная защита перед открытием.
+            if (!MediaReady)
+            {
+                devicesRequested = true;
+                return;
+            }
+
+            if (lobbyClient.IsLobbyVisible)
+            {
+                playRequested = false;
+                return;
+            }
+
+            playRequested = false;
+            devicesRequested = false;
+
+            if (createMatchModal == null)
+            {
+                Debug.LogError(
+                    "Назначь CreateMatchPopup → LeanWindow " +
+                    "в поле Create Match Modal.",
+                    this);
+
+                return;
+            }
+
+            createMatchModal.TurnOn();
         }
 
         public void OnContinueButtonClick()
@@ -554,175 +273,88 @@ namespace Kodimodi.UI
             OnPlayButtonClick();
         }
 
-        public void OnCancelCameraButtonClick()
+        // ---------- Включение устройств ----------
+
+        public void EnableWebCam()
         {
-            // Закрытие popup не останавливает разрешённую камеру.
-            cameraPopup.TurnOff();
-        }
-
-        private void ShowMediaWarning()
-        {
-            string message;
-
-            if (!cameraPermissionGranted && !microphoneGranted)
-            {
-                message =
-                    "Твоё лицо — твой персонаж!\n\n" +
-                    "Для игры нужен доступ к камере и микрофону.";
-            }
-            else if (!cameraPermissionGranted)
-            {
-                message = "Для игры нужен доступ к камере.";
-            }
-            else
-            {
-                message =
-                    "Для игры также нужен доступ к микрофону.";
-            }
-
-            SetMessage(message);
-            ShowBrowserPermissionHelp();
-
-            cameraPopup.TurnOn();
-        }
-
-        private string GetBrowserPermissionInstructions()
-        {
-            switch (browserName)
-            {
-                case "chrome":
-                    return
-                        "В Chrome нажми значок настроек сайта " +
-                        "слева от адреса.\n" +
-                        "Разреши «Камеру» и «Микрофон». " +
-                        "Если этих пунктов нет — " +
-                        "открой «Настройки сайтов».";
-
-                case "edge":
-                    return
-                        "В Edge нажми значок сведений о сайте " +
-                        "слева от адреса.\n" +
-                        "Открой разрешения для этого сайта " +
-                        "и разреши камеру и микрофон.";
-
-                case "firefox":
-                    return
-                        "В Firefox нажми значок разрешений " +
-                        "слева от адреса.\n" +
-                        "Удали сохранённую блокировку камеры " +
-                        "и микрофона, затем повтори попытку " +
-                        "и разреши доступ.";
-
-                case "safari":
-                    return
-                        "В Safari открой меню " +
-                        "Safari → Настройки → Веб-сайты.\n" +
-                        "В разделах «Камера» и «Микрофон» " +
-                        "выбери «Разрешить» для сайта игры.";
-
-                default:
-                    return
-                        "Открой настройки или разрешения сайта " +
-                        "в своём браузере и разреши " +
-                        "камеру и микрофон.";
-            }
-        }
-
-        private void ShowBrowserPermissionHelp()
-        {
-#if !UNITY_EDITOR
-    if (permissionHelpVisible)
-        return;
-
-    permissionHelpVisible = true;
-
-    if (cameraPopupText != null)
-    {
-        cameraPopupText.text +=
-            "\n\n" + GetBrowserPermissionInstructions() +
-            "\n\nНажми «Включить / проверить снова»." +
-            "\nЕсли браузер просит обновить страницу — обнови её.";
-    }
-
-    UpdatePermissionHelpImage();
-#endif
-        }
-
-        private void UpdatePermissionHelpImage()
-        {
-            if (permissionHelpImage == null)
+            if (!CanUpdateUI || DeviceOperationPending)
                 return;
 
-            Sprite sprite;
+            SetMessage(
+                "Разреши доступ к камере и микрофону " +
+                "в окне браузера.");
 
-            switch (browserName)
+            mediaAccess.RequestAccess(
+                requestVideo: !IsCameraReady);
+        }
+
+        private void StartCamera()
+        {
+            if (!CanUpdateUI ||
+                !mediaAccess.CameraGranted ||
+                mediaAccess.RequestPending ||
+                CameraStarting ||
+                IsCameraReady)
             {
-                case "chrome":
-                    sprite = chromePermissionSprite;
-                    break;
-                case "safari":
-                    sprite = safariPermissionSprite;
-                    break;
-                case "firefox":
-                    sprite = firefoxPermissionSprite;
-                    break;
-                case "edge":
-                    sprite = edgePermissionSprite;
-                    break;
-                default:
-                    sprite = fallbackPermissionSprite;
-                    break;
-            }
-
-            if (sprite == null)
-                sprite = fallbackPermissionSprite;
-
-            permissionHelpImage.sprite = sprite;
-            permissionHelpImage.preserveAspect = true;
-            permissionHelpImage.gameObject.SetActive(
-                permissionHelpVisible && sprite != null);
-        }
-
-        private void HidePermissionHelp()
-        {
-            permissionHelpVisible = false;
-
-            if (permissionHelpImage != null)
-                permissionHelpImage.gameObject.SetActive(false);
-        }
-
-        private void SetMessage(string message)
-        {
-            HidePermissionHelp();
-
-            if (cameraPopupText != null)
-                cameraPopupText.text = message;
-        }
-
-        private void UpdateButtons()
-        {
-            if (enableCameraButton == null)
                 return;
-
-            enableCameraButton.gameObject.SetActive(
-                !playPermissionCheckPending &&
-                !mediaPermissionPending &&
-                cameraRoutine == null &&
-                !IsMediaReady);
-        }
-
-        private void HideVideo()
-        {
-            if (rawImage != null)
-            {
-                rawImage.enabled = false;
-                rawImage.texture = null;
-                rawImage.uvRect = new Rect(0f, 0f, 1f, 1f);
-                rawImage.rectTransform.localRotation = initialRotation;
             }
 
-            if (rawImageMask != null)
-                rawImageMask.color = Color.black;
+            cameraRoutine = StartCoroutine(StartCameraRoutine());
+        }
+
+        private IEnumerator StartCameraRoutine()
+        {
+            yield return null;
+
+            try
+            {
+                if (!CanUpdateUI || !mediaAccess.CameraGranted)
+                    yield break;
+
+                webcamPreview.StopPreview();
+
+                yield return mediaAccess.EnsureUnityCameraAccess();
+
+                if (!CanUpdateUI || !mediaAccess.CameraGranted)
+                    yield break;
+
+                if (!mediaAccess.UnityCameraAuthorized)
+                {
+                    SetMessage(
+                        "Не удалось получить доступ к камере.\n\n" +
+                        "Проверь разрешения и повтори попытку.");
+
+                    yield break;
+                }
+
+                SetMessage("Ожидаем изображение с камеры…");
+
+                yield return webcamPreview.PlayRoutine();
+
+                if (!CanUpdateUI)
+                    yield break;
+
+                if (!IsCameraReady)
+                {
+                    SetMessage(
+                        webcamPreview.LastError ??
+                        "Не удалось запустить камеру.");
+
+                    yield break;
+                }
+
+                SetMessage(
+                    mediaAccess.MicrophoneGranted
+                        ? "Видео работает, доступ к микрофону получен."
+                        : "Для игры также нужен доступ к микрофону.");
+            }
+            finally
+            {
+                cameraRoutine = null;
+
+                if (CanUpdateUI)
+                    RefreshEntryUI();
+            }
         }
 
         private void CancelCameraStartupAndStop()
@@ -733,37 +365,96 @@ namespace Kodimodi.UI
                 cameraRoutine = null;
             }
 
-            StopCamera();
+            if (webcamPreview != null)
+                webcamPreview.StopPreview();
         }
 
-        private void StopCamera()
+        public void ShowDeviceSetupForLobby()
         {
-            cameraReady = false;
-            HideVideo();
-
-            if (webcamTexture == null)
+            if (!CanUpdateUI || !lobbyClient.IsLobbyVisible)
                 return;
 
-            webcamTexture.Stop();
-            Destroy(webcamTexture);
-            webcamTexture = null;
+            playRequested = false;
+            devicesRequested = !MediaReady;
+
+            RefreshEntryUI();
+        }
+        
+        // ---------- Экраны ----------
+
+        private void RefreshEntryUI()
+        {
+            if (!CanUpdateUI)
+                return;
+
+            bool ready = MediaReady;
+            bool hasRoom = lobbyClient.IsLobbyVisible;
+
+            if (ready)
+                devicesRequested = false;
+
+            if (hasRoom)
+            {
+                playRequested = false;
+                mediaWasReady = ready;
+
+                // В лобби устройства показываем только по явному запросу.
+                bool showLobbyDevices = devicesRequested && !ready;
+
+                SetVisible(deviceSetupUI, showLobbyDevices);
+                SetVisible(matchLobbyUI, !showLobbyDevices);
+                SetVisible(playButton, false);
+                return;
+            }
+
+            if (mediaWasReady && !ready)
+            {
+                devicesRequested = true;
+
+                if (createMatchModal != null)
+                    createMatchModal.TurnOff();
+            }
+
+            mediaWasReady = ready;
+
+            if (playRequested &&
+                ready &&
+                !mediaAccess.RequestPending)
+            {
+                OpenCreateMatch();
+            }
+
+            bool showDevices = !ready && devicesRequested;
+
+            SetVisible(deviceSetupUI, showDevices);
+            SetVisible(matchLobbyUI, false);
+            SetVisible(playButton, !showDevices);
         }
 
-        private void OnDisable()
+        private static void SetVisible(GameObject target, bool visible)
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            if (rawImage != null)
-                StopMediaPermissionWatch(gameObject.name);
-#endif
+            if (target != null && target.activeSelf != visible)
+                target.SetActive(visible);
+        }
 
-            playPermissionCheckPending = false;
-            mediaPermissionPending = false;
-            cameraPermissionGranted = false;
-            microphoneGranted = false;
+        // ---------- Помощь ----------
 
-            CancelCameraStartupAndStop();
-            HidePermissionHelp();
-            UpdateButtons();
+        private void SetMessage(string message)
+        {
+            if (permissionHelp != null)
+                permissionHelp.SetMessage(message);
+        }
+
+        public void ShowBrowserPermissionHelp()
+        {
+            if (permissionHelp != null)
+                permissionHelp.Show();
+        }
+
+        public void OnCancelCameraButtonClick()
+        {
+            if (permissionHelp != null)
+                permissionHelp.Hide();
         }
     }
 }

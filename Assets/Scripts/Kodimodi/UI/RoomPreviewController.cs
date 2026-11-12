@@ -1,29 +1,22 @@
 using System;
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Kodimodi.UI
 {
-    [RequireComponent(typeof(CreateMatch))]
     public class RoomPreviewController : MonoBehaviour
     {
-        [SerializeField] private GameObject joinButton;
-        [SerializeField] private TMP_Text statusText;
-
         public bool IsPreviewing { get; private set; }
-        public bool IsAwaitingMedia { get; private set; }
 
-        private CreateMatch match;
+        private LobbyClient lobby;
         private ProfileController profile;
 
         private string roomCode;
         private bool canJoin;
 
         private Coroutine pollingRoutine;
-        private Coroutine mediaRoutine;
-        private UnityWebRequest request;
+        private UnityWebRequest activeRequest;
 
         [Serializable]
         private class PreviewResponse
@@ -44,32 +37,33 @@ namespace Kodimodi.UI
 
         private void Awake()
         {
-            match = GetComponent<CreateMatch>();
-            profile = GetComponentInParent<ProfileController>();
+            lobby = GetComponent<LobbyClient>();
+            profile = FindAnyObjectByType<ProfileController>();
 
-            UpdateJoinButton();
+            if (lobby == null)
+            {
+                Debug.LogError(
+                    "RoomPreviewController должен находиться " +
+                    "на одном объекте с LobbyClient.",
+                    this);
+
+                enabled = false;
+            }
         }
 
         public void Show(string code)
         {
+            if (!isActiveAndEnabled || lobby == null)
+                return;
+
             Close();
 
             roomCode = code;
             IsPreviewing = true;
+            canJoin = false;
 
-            match.SetMatchLink(code);
-            match.createMatchModal.SetActive(false);
-            match.searchMatchModal.SetActive(true);
-            match.startMatchBtnUI.SetActive(false);
-            match.cancelMatchBtnUI.SetActive(true);
+            lobby.ShowPreview(code);
 
-            if (match.searchMatchModalSpinner != null)
-                match.searchMatchModalSpinner.SetActive(false);
-
-            ClearPlayers();
-            SetStatus("Загружаем комнату…");
-
-            match.modal.TurnOn();
             pollingRoutine = StartCoroutine(PollRoom());
         }
 
@@ -77,34 +71,33 @@ namespace Kodimodi.UI
         {
             while (IsPreviewing)
             {
-                using (var req = UnityWebRequest.Get(
+                using (var request = UnityWebRequest.Get(
                     $"{ServerConfig.HttpUrl}/rooms/{roomCode}/preview"))
                 {
-                    request = req;
-                    req.timeout = 10;
+                    activeRequest = request;
+                    request.timeout = 10;
 
-                    yield return req.SendWebRequest();
+                    yield return request.SendWebRequest();
 
-                    request = null;
+                    activeRequest = null;
 
                     if (!IsPreviewing)
                         yield break;
 
-                    if (req.result != UnityWebRequest.Result.Success)
+                    if (request.result !=
+                        UnityWebRequest.Result.Success)
                     {
                         canJoin = false;
 
-                        SetStatus(
-                            req.responseCode == 404
+                        lobby.SetPreviewError(
+                            request.responseCode == 404
                                 ? "Комната больше не существует."
                                 : "Не удалось обновить комнату. Повторяем…");
                     }
                     else
                     {
-                        ApplyResponse(req.downloadHandler.text);
+                        ApplyResponse(request.downloadHandler.text);
                     }
-
-                    UpdateJoinButton();
                 }
 
                 yield return new WaitForSecondsRealtime(2f);
@@ -121,159 +114,86 @@ namespace Kodimodi.UI
             {
                 data = JsonUtility.FromJson<PreviewResponse>(json);
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
                 Debug.LogWarning(
-                    "Ошибка чтения комнаты: " + e.Message);
+                    "Ошибка чтения комнаты: " + exception.Message);
 
                 canJoin = false;
-                SetStatus("Не удалось прочитать данные комнаты.");
+                lobby.SetPreviewError(
+                    "Не удалось прочитать данные комнаты.");
+
                 return;
             }
 
             if (data == null ||
                 string.IsNullOrEmpty(data.state) ||
-                data.players == null)
+                data.players == null ||
+                data.maxPlayers < 1)
             {
                 canJoin = false;
-                SetStatus("Не удалось прочитать данные комнаты.");
+                lobby.SetPreviewError(
+                    "Не удалось прочитать данные комнаты.");
+
                 return;
             }
-
-            RenderPlayers(data.players.Length);
 
             canJoin = data.state == "lobby" && data.canJoin;
 
-            string message;
+            string status;
 
             if (data.state == "started")
-                message = "Матч уже начался.";
+                status = "Матч уже начался.";
             else if (data.state == "closed")
-                message = "Комната закрыта.";
+                status = "Комната закрыта.";
             else if (!canJoin)
-                message = "Нет свободных мест.";
+                status = "Нет свободных мест.";
             else
-                message = "Нажми «Подключиться», чтобы войти.";
+                status = "Нажми «Подключиться», чтобы войти.";
 
-            SetStatus(
-                $"Игроки: {data.players.Length}/{data.maxPlayers}\n"
-                + message);
+            lobby.ApplyPreview(
+                data.players.Length,
+                data.maxPlayers,
+                canJoin,
+                status);
         }
 
-        private void ClearPlayers()
-        {
-            foreach (Transform child in
-                     match.searchMatchScrollViewUI.transform)
-            {
-                Destroy(child.gameObject);
-            }
-        }
-
-        private void RenderPlayers(int count)
-        {
-            ClearPlayers();
-
-            for (int i = 0; i < count; i++)
-            {
-                var item = Instantiate(
-                    match.searchMatchScrollViewItemPrefabUI,
-                    match.searchMatchScrollViewUI.transform);
-
-                var label = item.GetComponentInChildren<TMP_Text>();
-
-                if (label != null)
-                    label.text = $"Игрок {i + 1}";
-            }
-        }
-
-        // Вызывается кнопкой «Подключиться».
         public void OnJoinClick()
         {
-            if (!IsPreviewing || !canJoin || IsAwaitingMedia)
+            if (!IsPreviewing || !canJoin)
                 return;
 
-            if (profile == null || !profile.isActiveAndEnabled)
+            if (profile == null)
+                profile = FindAnyObjectByType<ProfileController>();
+
+            if (profile == null)
             {
-                SetStatus("Не найден активный ProfileController.");
-                return;
-            }
+                Debug.LogError(
+                    "RoomPreviewController: не найден ProfileController.",
+                    this);
 
-            IsAwaitingMedia = true;
-            UpdateJoinButton();
-
-            // ProfileController откроет окно снова,
-            // когда его проверка будет пройдена.
-            match.modal.TurnOff();
-            profile.OnPlayButtonClick();
-
-            if (IsAwaitingMedia)
-                mediaRoutine = StartCoroutine(WaitForCamera());
-        }
-
-        private IEnumerator WaitForCamera()
-        {
-            yield return null;
-
-            while (IsPreviewing && IsAwaitingMedia)
-            {
-                if (profile == null || !profile.isActiveAndEnabled)
-                    break;
-
-                if (profile.IsCameraReady)
-                {
-                    mediaRoutine = null;
-
-                    // Итоговую проверку камеры и микрофона
-                    // выполняет существующий ProfileController.
-                    profile.OnPlayButtonClick();
-                    yield break;
-                }
-
-                yield return null;
-            }
-
-            mediaRoutine = null;
-        }
-
-        // Событие On On у LeanWindow окна создания матча.
-        public void OnMediaApproved()
-        {
-            if (!IsPreviewing ||
-                !IsAwaitingMedia ||
-                profile == null ||
-                !profile.IsCameraReady)
-            {
                 return;
             }
 
-            match.JoinLinkedRoomAfterMediaCheck();
-        }
-
-        private void UpdateJoinButton()
-        {
-            if (joinButton != null)
+            if (!profile.MediaReady)
             {
-                joinButton.SetActive(
-                    IsPreviewing && canJoin && !IsAwaitingMedia);
+                profile.ShowDeviceSetupForLobby();
+                return;
             }
-        }
 
-        private void SetStatus(string text)
-        {
-            if (statusText != null)
-                statusText.text = text;
+            canJoin = false;
+            lobby.JoinPreviewRoom();
         }
 
         public void Close()
         {
             IsPreviewing = false;
-            IsAwaitingMedia = false;
             canJoin = false;
 
-            if (request != null)
+            if (activeRequest != null)
             {
-                request.Abort();
-                request = null;
+                activeRequest.Abort();
+                activeRequest = null;
             }
 
             if (pollingRoutine != null)
@@ -281,15 +201,6 @@ namespace Kodimodi.UI
                 StopCoroutine(pollingRoutine);
                 pollingRoutine = null;
             }
-
-            if (mediaRoutine != null)
-            {
-                StopCoroutine(mediaRoutine);
-                mediaRoutine = null;
-            }
-
-            UpdateJoinButton();
-            SetStatus("");
         }
 
         private void OnDisable()
