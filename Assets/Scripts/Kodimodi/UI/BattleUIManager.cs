@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Linq;
 using Akila.FPSFramework;
 using Kodimodi.Models;
@@ -11,73 +10,395 @@ namespace Kodimodi.UI
 {
     public class BattleUIManager : MonoBehaviour
     {
-        public LeanWindow statisticPopup;
-        public GameObject statisticScrollViewItemPrefab, statisticScrollViewLocalItemPrefab;
-        public Transform statisticContent;   // Content внутри Scroll View окна Statistic
-
-        public LeanWindow statisticFinishedPopup;
-        public LeanWindow finishedTextPopup;
-
-        private ScoreboardModel lastBoard;
-        private bool statisticOpen;
-        private bool wasCursorLocked;
+        private MatchStatsView matchStatsUI;
         
-        [Header("Завершение матча")]
-        [SerializeField] private TMP_Text finishedResultText;
-        [SerializeField] private Transform finishedStatisticContent;
-
-        private bool matchEnded;
-        private Coroutine finishRoutine;
-        private BattleClient client;
-        private MatchNotifications notifications;
+        private GameObject exitMatchUI;
+        private bool exitMatchOpen;
         
+        [Header("Возврат в меню")]
         [SerializeField] private string menuSceneName = "ProfileScene";
+
+        [Header("Информация о матче")]
         [SerializeField] private TMP_Text killsRemainingText;
-        
+
         [Header("Потеря соединения")]
         [SerializeField] private LeanWindow connectionLostPopup;
         [SerializeField] private TMP_Text connectionLostText;
 
+        private ScoreboardModel lastBoard;
+
+        private BattleClient client;
+        private MatchNotifications notifications;
+        private MatchResultsView matchResultsUI;
+
+        private bool statisticOpen;
+        private bool wasCursorLocked;
+        private bool matchEnded;
+        private bool leaving;
+
         private void Awake()
         {
             notifications = GetComponent<MatchNotifications>();
+
+            FindMatchStatsUI();
+
+            if (matchStatsUI != null)
+                matchStatsUI.SetVisible(false);
+            
+            FindExitMatchUI();
+            SetExitVisible(false);
+            
+            FindMatchResultsUI();
+
+            if (matchResultsUI != null)
+                matchResultsUI.SetVisible(false);
         }
-        
-        private void OnPlayerLeft(int playerId)
+
+        private void FindMatchResultsUI()
         {
-            if (matchEnded || client == null || client.IsDisconnected)
+            if (matchResultsUI != null)
                 return;
 
-            notifications?.Show($"Игрок {playerId} вышел из матча");
+            matchResultsUI = FindAnyObjectByType<MatchResultsView>(
+                FindObjectsInactive.Include);
         }
         
+        private void FindExitMatchUI()
+        {
+            if (exitMatchUI != null)
+                return;
+
+            FindMatchStatsUI();
+
+            if (matchStatsUI == null)
+                return;
+
+            var canvasRoot = matchStatsUI.transform.parent;
+
+            if (canvasRoot == null)
+                return;
+
+            var window = canvasRoot.Find("ExitMatchUI");
+
+            if (window != null)
+                exitMatchUI = window.gameObject;
+        }
+
+        private void SetExitVisible(bool visible)
+        {
+            if (exitMatchUI == null)
+                return;
+
+            var group = exitMatchUI.GetComponent<CanvasGroup>();
+
+            if (group != null)
+            {
+                group.alpha = visible ? 1f : 0f;
+                group.interactable = visible;
+                group.blocksRaycasts = visible;
+            }
+
+            exitMatchUI.SetActive(visible);
+        }
+
+        private void SetExitMatchOpen(bool open)
+        {
+            if (leaving ||
+                matchEnded ||
+                client == null ||
+                client.IsDisconnected)
+            {
+                return;
+            }
+
+            FindExitMatchUI();
+
+            if (open && exitMatchUI == null)
+            {
+                Debug.LogError(
+                    "BattleUIManager: объект ExitMatchUI не найден " +
+                    "рядом с MatchStatsUI.",
+                    this);
+                return;
+            }
+
+            if (open)
+                HideStats();
+
+            exitMatchOpen = open;
+            SetExitVisible(open);
+
+            FPSFrameworkCore.IsInputActive =
+                !open &&
+                client.CanPlay &&
+                !FPSFrameworkCore.IsPaused;
+
+            bool releaseCursor =
+                open ||
+                client.VideoMovementBlocked ||
+                FPSFrameworkCore.IsPaused;
+
+            Cursor.lockState = releaseCursor
+                ? CursorLockMode.None
+                : CursorLockMode.Locked;
+
+            Cursor.visible = releaseCursor;
+
+            wasCursorLocked =
+                Cursor.lockState == CursorLockMode.Locked;
+        }
+
+        private void HideExitMatch()
+        {
+            exitMatchOpen = false;
+            SetExitVisible(false);
+        }
+
+        public void OnExitMatchStayBtnClick()
+        {
+            SetExitMatchOpen(false);
+        }
+
+        public void OnExitMatchLeaveBtnClick()
+        {
+            if (!exitMatchOpen || leaving)
+                return;
+
+            LeaveToMenu();
+        }
+        
+        private void FindMatchStatsUI()
+        {
+            if (matchStatsUI != null)
+                return;
+
+            matchStatsUI = FindAnyObjectByType<MatchStatsView>(
+                FindObjectsInactive.Include);
+        }
+
         private void Start()
         {
             client = BattleClient.Instance;
-            if (client == null) return;
+
+            if (client == null)
+            {
+                Debug.LogError(
+                    "BattleUIManager: BattleClient не найден.",
+                    this);
+                return;
+            }
 
             client.ScoreboardUpdated += OnScoreboard;
             client.MatchEnded += OnMatchEnded;
             client.BattleDisconnected += OnBattleDisconnected;
             client.PlayerLeft += OnPlayerLeft;
 
+            wasCursorLocked =
+                Cursor.lockState == CursorLockMode.Locked;
+
             if (client.IsDisconnected)
                 OnBattleDisconnected(client.DisconnectReason);
 
-            // Если результат пришёл до подписки UI.
+            // Результат мог прийти раньше подписки UI.
             if (client.FinalResult != null)
                 OnMatchEnded(client.FinalResult);
         }
 
+        private void OnDestroy()
+        {
+            if (client != null)
+            {
+                client.ScoreboardUpdated -= OnScoreboard;
+                client.MatchEnded -= OnMatchEnded;
+                client.BattleDisconnected -= OnBattleDisconnected;
+                client.PlayerLeft -= OnPlayerLeft;
+            }
+        }
+
+        private void Update()
+        {
+            if (leaving ||
+                matchEnded ||
+                client == null ||
+                client.IsDisconnected)
+            {
+                return;
+            }
+
+            bool locked =
+                Cursor.lockState == CursorLockMode.Locked;
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                SetExitMatchOpen(!exitMatchOpen);
+            }
+            else if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                if (!exitMatchOpen)
+                    SetStatisticOpen(!statisticOpen);
+            }
+            else if (!exitMatchOpen &&
+                     !statisticOpen &&
+                     wasCursorLocked &&
+                     !locked &&
+                     !client.VideoMovementBlocked &&
+                     !FPSFrameworkCore.IsPaused)
+            {
+                // Браузер может перехватить Esc и только освободить курсор.
+                SetExitMatchOpen(true);
+            }
+
+            wasCursorLocked =
+                Cursor.lockState == CursorLockMode.Locked;
+        }
+
+        private void LateUpdate()
+        {
+            if (leaving ||
+                statisticOpen ||
+                exitMatchOpen ||
+                matchEnded ||
+                (client != null && client.IsDisconnected))
+            {
+                FPSFrameworkCore.IsInputActive = false;
+            }
+        }
+
+        // ---------- Статистика матча ----------
+
+        private void SetStatisticOpen(bool open)
+        {
+            if (exitMatchOpen)
+                return;
+            
+            if (leaving ||
+                matchEnded ||
+                client == null ||
+                client.IsDisconnected)
+            {
+                return;
+            }
+
+            FindMatchStatsUI();
+
+            if (open && matchStatsUI == null)
+            {
+                Debug.LogError(
+                    "BattleUIManager: добавь MatchStatsView " +
+                    "на объект MatchStatsUI.",
+                    this);
+                return;
+            }
+
+            statisticOpen = open;
+
+            if (open)
+                RenderStats();
+
+            if (matchStatsUI != null)
+                matchStatsUI.SetVisible(open);
+
+            FPSFrameworkCore.IsInputActive =
+                !open &&
+                client.CanPlay &&
+                !FPSFrameworkCore.IsPaused;
+
+            bool releaseCursor =
+                open ||
+                client.VideoMovementBlocked ||
+                FPSFrameworkCore.IsPaused;
+
+            Cursor.lockState = releaseCursor
+                ? CursorLockMode.None
+                : CursorLockMode.Locked;
+
+            Cursor.visible = releaseCursor;
+
+            wasCursorLocked =
+                Cursor.lockState == CursorLockMode.Locked;
+        }
+
+        private void HideStats()
+        {
+            statisticOpen = false;
+
+            if (matchStatsUI != null)
+                matchStatsUI.SetVisible(false);
+        }
+
+        private void RenderStats()
+        {
+            if (matchStatsUI == null || client == null)
+                return;
+
+            matchStatsUI.Render(
+                lastBoard,
+                client.id,
+                client.DepartedPlayerIds);
+        }
+
+        private void OnScoreboard(ScoreboardModel board)
+        {
+            if (leaving ||
+                matchEnded ||
+                client == null ||
+                client.IsDisconnected ||
+                board == null)
+            {
+                return;
+            }
+
+            lastBoard = board;
+
+            int leaderKills = board.Players?
+                .Where(p =>
+                    p != null &&
+                    !client.DepartedPlayerIds.Contains(p.Id))
+                .Select(p => p.Kills)
+                .DefaultIfEmpty(0)
+                .Max() ?? 0;
+
+            int remaining = Mathf.Max(
+                0,
+                board.KillLimit - leaderKills);
+
+            if (killsRemainingText != null)
+            {
+                killsRemainingText.text =
+                    $"До конца матча: {remaining} убийств";
+            }
+
+            if (statisticOpen)
+                RenderStats();
+        }
+
+        private void OnPlayerLeft(int playerId)
+        {
+            if (leaving ||
+                matchEnded ||
+                client == null ||
+                client.IsDisconnected)
+            {
+                return;
+            }
+
+            notifications?.Show(
+                $"Игрок {playerId} вышел из матча");
+
+            if (statisticOpen)
+                RenderStats();
+        }
+
+        // ---------- Потеря соединения ----------
+        // Пока используется старое окно Connection.
+
         private void OnBattleDisconnected(string reason)
         {
-            if (matchEnded) return;
+            if (leaving || matchEnded)
+                return;
 
-            if (finishRoutine != null)
-                StopCoroutine(finishRoutine);
-
-            statisticOpen = false;
-            statisticPopup.TurnOff();
+            HideStats();
+            HideExitMatch();
 
             FPSFrameworkCore.IsInputActive = false;
             Cursor.lockState = CursorLockMode.None;
@@ -103,6 +424,9 @@ namespace Kodimodi.UI
                 "connection_timeout" =>
                     "Сервер не отвечает. Соединение потеряно.",
 
+                "protocol_error" =>
+                    "Ошибка обмена данными с игровым сервером.",
+
                 _ =>
                     "Соединение с игровым сервером потеряно."
             };
@@ -119,214 +443,93 @@ namespace Kodimodi.UI
                 Debug.LogError(message);
         }
 
-        public void OnConnectionLostHomeBtnClick()
-        {
-            LeaveToMenu();
-        }
-        
-        private void OnDestroy()
-        {
-            if (client != null)
-            {
-                client.ScoreboardUpdated -= OnScoreboard;
-                client.MatchEnded -= OnMatchEnded;
-                client.BattleDisconnected -= OnBattleDisconnected;
-                client.PlayerLeft -= OnPlayerLeft;
-            }
+        // ---------- Завершение матча ----------
+        // Старые окна сохраняем до следующего этапа.
 
-            if (finishRoutine != null)
-                StopCoroutine(finishRoutine);
-        }
-        
         private void OnMatchEnded(MatchEndedModel result)
         {
-            if (matchEnded || (client != null && client.IsDisconnected))
-                return;
-            matchEnded = true;
-            killsRemainingText.text = "match Ended";
-
-            lastBoard = new ScoreboardModel
+            if (leaving ||
+                matchEnded ||
+                result == null ||
+                client == null ||
+                client.IsDisconnected)
             {
-                Players = result.Players
-            };
+                return;
+            }
 
-            statisticOpen = false;
-            statisticPopup.TurnOff();
+            matchEnded = true;
+
+            HideStats();
+            HideExitMatch();
 
             FPSFrameworkCore.IsInputActive = false;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            finishedResultText.text = result.WinnerId == client.id
-                ? "You won!"
-                : "You lost";
-
-            finishRoutine = StartCoroutine(ShowFinishedRoutine());
-        }
-
-        private IEnumerator ShowFinishedRoutine()
-        {
-            finishedTextPopup.TurnOn();
-
-            yield return new WaitForSecondsRealtime(3f);
-
-            finishedTextPopup.TurnOff();
-
-            Render(lastBoard, finishedStatisticContent);
-            statisticFinishedPopup.TurnOn();
-
-            finishRoutine = null;
-        }
-
-        private void Update()
-        {
-            if (matchEnded || (client != null && client.IsDisconnected))
-                return;
-            
-            bool locked = Cursor.lockState == CursorLockMode.Locked;
-
-            if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
-                SetStatisticOpen(!statisticOpen);
-            else if (!statisticOpen && wasCursorLocked && !locked)
-                SetStatisticOpen(true);   // в браузере Esc часто только освобождает курсор
-
-            wasCursorLocked = locked;
-        }
-
-        private void LateUpdate()
-        {
-            if (statisticOpen
-                || matchEnded
-                || (client != null && client.IsDisconnected))
-            {
-                FPSFrameworkCore.IsInputActive = false;
-            }
-        }
-
-        // ---------- Окно статистики ----------
-
-        private void SetStatisticOpen(bool open)
-        {
-            if (matchEnded || (client != null && client.IsDisconnected))
-                return;
-            
-            statisticOpen = open;
-
-            if (open)
-            {
-                Render(lastBoard);   // при открытии всегда свежие данные
-                statisticPopup.TurnOn();
-            }
-            else
-            {
-                statisticPopup.TurnOff();
-            }
-
-            FPSFrameworkCore.IsInputActive =
-                !open && client != null && client.CanPlay;
-            Cursor.lockState = open ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = open;
-        }
-
-        private void OnScoreboard(ScoreboardModel board)
-        {
-            if (matchEnded || (client != null && client.IsDisconnected))
-                return;
-
-            lastBoard = board;
-
-            int leaderKills = board.Players
-                .Where(p => !client.DepartedPlayerIds.Contains(p.Id))
-                .Select(p => p.Kills)
-                .DefaultIfEmpty(0)
-                .Max();
-
-            int remaining = Mathf.Max(
-                0,
-                board.KillLimit - leaderKills);
-
             if (killsRemainingText != null)
+                killsRemainingText.text = "Матч завершён";
+
+            FindMatchResultsUI();
+
+            if (matchResultsUI == null)
             {
-                killsRemainingText.text =
-                    $"До конца матча: {remaining} убийств";
-            }
-
-            if (statisticOpen)
-                Render(board);
-        }
-
-        // ---------- Таблица ----------
-
-        private void Render(ScoreboardModel board, Transform content = null)
-        {
-            if (content == null)
-                content = statisticContent;
-
-            foreach (Transform child in content)
-            {
-                child.gameObject.SetActive(false);
-                Destroy(child.gameObject);
-            }
-
-            if (board == null) return;
-
-            int myId = BattleClient.Instance != null ? BattleClient.Instance.id : 0;
-
-            var sorted = board.Players
-                .OrderByDescending(p => p.Kills)
-                .ThenBy(p => p.Deaths)
-                .ThenBy(p => p.Id)
-                .ToList();
-
-            for (int i = 0; i < sorted.Count; i++)
-            {
-                var p = sorted[i];
-
-                bool mine = p.Id == myId;
-                var prefab = mine ? statisticScrollViewLocalItemPrefab : statisticScrollViewItemPrefab;
-                var row = Instantiate(prefab, content);
-
-                SetText(row.transform, "Place", (i + 1).ToString());
-                SetText(row.transform, "Name", mine ? $"Игрок {p.Id} - Вы" : $"Игрок {p.Id}");
-                SetText(row.transform, "Kills", p.Kills.ToString());
-            }
-        }
-
-        private static void SetText(Transform row, string childName, string value)
-        {
-            var child = row.Find(childName);
-            var text = child != null ? child.GetComponent<TMP_Text>() : null;
-
-            if (text == null)
-            {
-                Debug.LogWarning($"В префабе строки нет текста '{childName}'");
+                Debug.LogError(
+                    "BattleUIManager: добавь MatchResultsView " +
+                    "на объект MatchResultsUI.",
+                    this);
                 return;
             }
 
-            text.text = value;
+            matchResultsUI.Render(
+                result,
+                client.id,
+                client.DepartedPlayerIds);
+
+            matchResultsUI.SetVisible(true);
         }
 
-        // ---------- Кнопки (пока заготовки) ----------
+        // ---------- Кнопки ----------
 
-// Игрок нажал «Выйти» посреди матча
-        public void OnStatisticExitBtnClick() => LeaveToMenu();
+        public void OnStatsCloseBtnClick()
+        {
+            SetStatisticOpen(false);
+        }
 
-// Матч закончился, игрок нажал «На главную»
-        public void OnStatisticFinishedHomeBtnClick() => LeaveToMenu();
+        public void OnStatisticExitBtnClick()
+        {
+            SetExitMatchOpen(true);
+        }
+
+        public void OnStatisticFinishedHomeBtnClick()
+        {
+            LeaveToMenu();
+        }
+
+        public void OnConnectionLostHomeBtnClick()
+        {
+            LeaveToMenu();
+        }
 
         private void LeaveToMenu()
         {
-            // это состояние статическое и переживёт смену сцены, поэтому возвращаем как было
-            statisticOpen = false;
-            FPSFrameworkCore.IsInputActive = true;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            if (leaving)
+                return;
+
+            leaving = true;
+            HideStats();
+            HideExitMatch();
+
+            BattleClient.Instance?.Leave();
 
             MatchSession.RoomId = null;
             MatchSession.PlayerId = 0;
             MatchSession.BattleToken = null;
 
-            BattleClient.Instance?.Leave();
+            // Статическое состояние переживает смену сцены.
+            FPSFrameworkCore.IsInputActive = true;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             SceneManager.LoadScene(menuSceneName);
         }
     }
