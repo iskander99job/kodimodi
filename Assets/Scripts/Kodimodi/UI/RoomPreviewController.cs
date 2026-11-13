@@ -9,6 +9,9 @@ namespace Kodimodi.UI
     {
         public bool IsPreviewing { get; private set; }
 
+        private const int RequestTimeoutSeconds = 10;
+        private const float PollIntervalSeconds = 2f;
+
         private LobbyClient lobby;
         private ProfileController profile;
 
@@ -38,6 +41,7 @@ namespace Kodimodi.UI
         private void Awake()
         {
             lobby = GetComponent<LobbyClient>();
+
             profile = FindAnyObjectByType<ProfileController>();
 
             if (lobby == null)
@@ -58,55 +62,119 @@ namespace Kodimodi.UI
 
             Close();
 
-            roomCode = code;
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                ErrorPopup.Show(
+                    "В ссылке отсутствует код комнаты.",
+                    "Не удалось открыть матч");
+
+                return;
+            }
+
+            roomCode = code.Trim().ToUpperInvariant();
+
             IsPreviewing = true;
             canJoin = false;
 
-            lobby.ShowPreview(code);
+            lobby.ShowPreview(roomCode);
 
             pollingRoutine = StartCoroutine(PollRoom());
         }
 
         private IEnumerator PollRoom()
         {
-            while (IsPreviewing)
+            // Позволяет сохранить ссылку pollingRoutine
+            // до выполнения первого запроса.
+            yield return null;
+
+            try
             {
-                using (var request = UnityWebRequest.Get(
-                    $"{ServerConfig.HttpUrl}/rooms/{roomCode}/preview"))
+                while (IsPreviewing)
                 {
-                    activeRequest = request;
-                    request.timeout = 10;
+                    bool continuePolling = true;
 
-                    yield return request.SendWebRequest();
+                    string url =
+                        $"{ServerConfig.HttpUrl}/rooms/" +
+                        $"{Uri.EscapeDataString(roomCode)}/preview";
 
-                    activeRequest = null;
+                    using (var request = UnityWebRequest.Get(url))
+                    {
+                        activeRequest = request;
+                        request.timeout = RequestTimeoutSeconds;
 
-                    if (!IsPreviewing)
+                        yield return request.SendWebRequest();
+
+                        activeRequest = null;
+
+                        if (!IsPreviewing)
+                            yield break;
+
+                        if (request.result !=
+                            UnityWebRequest.Result.Success)
+                        {
+                            canJoin = false;
+
+                            Debug.LogWarning(
+                                $"Room preview failed: " +
+                                $"HTTP {request.responseCode}; " +
+                                $"{request.error}");
+
+                            if (request.responseCode == 404)
+                            {
+                                lobby.SetPreviewError(
+                                    "Комната не найдена или больше " +
+                                    "не существует. Проверь ссылку.");
+
+                                continuePolling = false;
+                            }
+                            else if (
+                                request.responseCode == 401 ||
+                                request.responseCode == 403)
+                            {
+                                lobby.SetPreviewError(
+                                    "Нет доступа к этой комнате.");
+
+                                continuePolling = false;
+                            }
+                            else if (request.responseCode == 400)
+                            {
+                                lobby.SetPreviewError(
+                                    "Сервер отклонил запрос комнаты. " +
+                                    "Проверь ссылку на матч.");
+
+                                continuePolling = false;
+                            }
+                            else
+                            {
+                                lobby.SetPreviewError(
+                                    "Не удалось получить данные комнаты.\n\n" +
+                                    "Проверь подключение к интернету. " +
+                                    "Повторяем запрос автоматически.");
+                            }
+                        }
+                        else
+                        {
+                            continuePolling = ApplyResponse(
+                                request.downloadHandler.text);
+                        }
+                    }
+
+                    if (!continuePolling)
                         yield break;
 
-                    if (request.result !=
-                        UnityWebRequest.Result.Success)
-                    {
-                        canJoin = false;
-
-                        lobby.SetPreviewError(
-                            request.responseCode == 404
-                                ? "Комната больше не существует."
-                                : "Не удалось обновить комнату. Повторяем…");
-                    }
-                    else
-                    {
-                        ApplyResponse(request.downloadHandler.text);
-                    }
+                    yield return new WaitForSecondsRealtime(
+                        PollIntervalSeconds);
                 }
-
-                yield return new WaitForSecondsRealtime(2f);
             }
-
-            pollingRoutine = null;
+            finally
+            {
+                activeRequest = null;
+                pollingRoutine = null;
+            }
         }
 
-        private void ApplyResponse(string json)
+        // false — дальнейший опрос комнаты не нужен.
+        private bool ApplyResponse(string json)
         {
             PreviewResponse data;
 
@@ -117,45 +185,87 @@ namespace Kodimodi.UI
             catch (Exception exception)
             {
                 Debug.LogWarning(
-                    "Ошибка чтения комнаты: " + exception.Message);
+                    "Ошибка чтения комнаты: " +
+                    exception.Message);
 
-                canJoin = false;
-                lobby.SetPreviewError(
-                    "Не удалось прочитать данные комнаты.");
-
-                return;
+                ShowInvalidResponse();
+                return true;
             }
 
             if (data == null ||
+                string.IsNullOrWhiteSpace(data.code) ||
+                !string.Equals(
+                    data.code,
+                    roomCode,
+                    StringComparison.OrdinalIgnoreCase) ||
                 string.IsNullOrEmpty(data.state) ||
                 data.players == null ||
-                data.maxPlayers < 1)
+                data.maxPlayers < 2 ||
+                data.players.Length > data.maxPlayers)
             {
-                canJoin = false;
-                lobby.SetPreviewError(
-                    "Не удалось прочитать данные комнаты.");
-
-                return;
+                ShowInvalidResponse();
+                return true;
             }
 
-            canJoin = data.state == "lobby" && data.canJoin;
-
-            string status;
+            foreach (var player in data.players)
+            {
+                if (player == null)
+                {
+                    ShowInvalidResponse();
+                    return true;
+                }
+            }
 
             if (data.state == "started")
-                status = "Матч уже начался.";
-            else if (data.state == "closed")
-                status = "Комната закрыта.";
-            else if (!canJoin)
-                status = "Нет свободных мест.";
-            else
-                status = "Нажми «Подключиться», чтобы войти.";
+            {
+                canJoin = false;
+
+                lobby.SetPreviewError(
+                    "Матч уже начался. " +
+                    "Подключиться к нему больше нельзя.");
+
+                return false;
+            }
+
+            if (data.state == "closed")
+            {
+                canJoin = false;
+
+                lobby.SetPreviewError(
+                    "Комната закрыта. " +
+                    "Попроси создателя прислать новую ссылку.");
+
+                return false;
+            }
+
+            if (data.state != "lobby")
+            {
+                ShowInvalidResponse();
+                return true;
+            }
+
+            canJoin = data.canJoin;
+
+            string status = canJoin
+                ? "Нажми «Подключиться», чтобы войти."
+                : "Подключение к комнате пока недоступно.";
 
             lobby.ApplyPreview(
                 data.players.Length,
                 data.maxPlayers,
                 canJoin,
                 status);
+
+            return true;
+        }
+
+        private void ShowInvalidResponse()
+        {
+            canJoin = false;
+
+            lobby.SetPreviewError(
+                "Сервер вернул некорректные данные комнаты.\n\n" +
+                "Повторяем запрос автоматически.");
         }
 
         public void OnJoinClick()
@@ -169,8 +279,14 @@ namespace Kodimodi.UI
             if (profile == null)
             {
                 Debug.LogError(
-                    "RoomPreviewController: не найден ProfileController.",
+                    "RoomPreviewController: " +
+                    "не найден ProfileController.",
                     this);
+
+                ErrorPopup.Show(
+                    "Не удалось подготовить вход в матч. " +
+                    "Попробуй обновить страницу.",
+                    "Не удалось подключиться");
 
                 return;
             }

@@ -23,6 +23,8 @@ namespace Kodimodi
         public bool IsLobbyVisible { get; private set; }
 
         private const int MinPlayers = 2;
+        private const float ConnectTimeoutSeconds = 10f;
+        private const float ActionTimeoutSeconds = 15f;
 
         private MatchLobbyView view;
         private RoomPreviewController preview;
@@ -34,10 +36,14 @@ namespace Kodimodi
         private bool connected;
         private bool starting;
         private bool leaving;
+        private bool previewErrorShown;
 
         private int capacity;
         private int playerCount;
         private string matchLink;
+
+        private double operationDeadline;
+        private string operationTimeoutReason;
 
         private void Awake()
         {
@@ -45,6 +51,7 @@ namespace Kodimodi
                 FindObjectsInactive.Include);
 
             preview = GetComponent<RoomPreviewController>();
+
             clipboard = FindAnyObjectByType<ClipboardManager>();
 
             if (view == null)
@@ -91,8 +98,10 @@ namespace Kodimodi
 
             capacity = 0;
             playerCount = 0;
+
             starting = false;
             leaving = false;
+            previewErrorShown = false;
 
             UpdateLink(code);
 
@@ -114,6 +123,10 @@ namespace Kodimodi
         {
             capacity = maxPlayers;
 
+            // После успешного ответа следующая ошибка
+            // снова сможет показать окно.
+            previewErrorShown = false;
+
             if (view != null)
             {
                 view.SetLoading(false);
@@ -125,20 +138,25 @@ namespace Kodimodi
 
         public void SetPreviewError(string message)
         {
-            // Временная ошибка предпросмотра:
-            // RoomPreviewController продолжает повторять запрос.
-            if (view != null)
-            {
-                view.SetLoading(false);
-                view.SetStatus(message);
-                view.SetActions(true, false, false, false);
-            }
+            if (string.IsNullOrWhiteSpace(message))
+                message = "Проверь ссылку или попробуй подключиться позже.";
+
+            ReturnHome();
+
+            ErrorPopup.Show(
+                message,
+                "Не удалось загрузить комнату");
         }
 
         public void JoinPreviewRoom()
         {
             if (string.IsNullOrEmpty(RoomCode))
+            {
+                ErrorPopup.Show(
+                    "Нет кода комнаты. Открой ссылку на матч заново.",
+                    "Не удалось войти");
                 return;
+            }
 
             Connect(RoomCode, nickname, null);
         }
@@ -155,6 +173,14 @@ namespace Kodimodi
 
             Disconnect();
 
+            if (string.IsNullOrWhiteSpace(roomId))
+            {
+                ErrorPopup.Show(
+                    "Не указан код комнаты.",
+                    "Не удалось подключиться");
+                return;
+            }
+
             RoomCode = roomId;
             IsHost = !string.IsNullOrEmpty(hostToken);
             IsLobbyVisible = true;
@@ -164,6 +190,7 @@ namespace Kodimodi
             leaving = false;
             playerCount = 0;
             finished = false;
+            previewErrorShown = false;
 
             UpdateLink(roomId);
 
@@ -175,19 +202,84 @@ namespace Kodimodi
                 view.SetActions(false, false, IsHost, false);
             }
 
-            var socket = new WebSocket(
-                $"{ServerConfig.WsUrl}/lobby");
+            BeginOperation(
+                ConnectTimeoutSeconds,
+                "connection_timeout");
 
-            ws = socket;
+            WebSocket socket = null;
 
-            socket.OnOpen += () =>
+            try
             {
-                if (ws != socket)
+                socket = new WebSocket(
+                    $"{ServerConfig.WsUrl}/lobby");
+
+                ws = socket;
+
+                socket.OnOpen += () =>
                 {
-                    SafeClose(socket);
+                    if (ws != socket || finished)
+                    {
+                        SafeClose(socket);
+                        return;
+                    }
+
+                    SendJoin(
+                        socket,
+                        roomId,
+                        playerNickname,
+                        hostToken);
+                };
+
+                socket.OnMessage += data =>
+                {
+                    if (ws == socket && !finished)
+                        HandleMessage(data);
+                };
+
+                socket.OnError += error =>
+                {
+                    if (ws != socket || finished)
+                        return;
+
+                    Debug.LogWarning(
+                        $"Lobby socket error: {error}");
+
+                    HandleClosed("connection_lost");
+                };
+
+                socket.OnClose += code =>
+                {
+                    if (ws != socket || finished)
+                        return;
+
+                    HandleClosed("connection_lost");
+                };
+
+                await socket.Connect();
+            }
+            catch (Exception exception)
+            {
+                if (finished ||
+                    (socket != null && ws != socket))
+                {
                     return;
                 }
 
+                Debug.LogWarning(
+                    $"Lobby connect failed: {exception.Message}");
+
+                HandleClosed("connection_lost");
+            }
+        }
+
+        private async void SendJoin(
+            WebSocket socket,
+            string roomId,
+            string playerNickname,
+            string hostToken)
+        {
+            try
+            {
                 var join = new LobbyJoinModel
                 {
                     RoomId = roomId,
@@ -195,33 +287,10 @@ namespace Kodimodi
                     HostToken = hostToken ?? ""
                 };
 
-                socket.Send(
-                    WsProtocol.Pack(WsMessageType.LobbyJoin, join));
-            };
-
-            socket.OnMessage += data =>
-            {
-                if (ws == socket)
-                    HandleMessage(data);
-            };
-
-            socket.OnError += error =>
-            {
-                if (ws == socket)
-                    Debug.LogWarning($"Lobby socket error: {error}");
-            };
-
-            socket.OnClose += code =>
-            {
-                if (ws != socket || finished)
-                    return;
-
-                HandleClosed("connection_lost");
-            };
-
-            try
-            {
-                await socket.Connect();
+                await socket.Send(
+                    WsProtocol.Pack(
+                        WsMessageType.LobbyJoin,
+                        join));
             }
             catch (Exception exception)
             {
@@ -229,7 +298,7 @@ namespace Kodimodi
                     return;
 
                 Debug.LogWarning(
-                    $"Lobby connect failed: {exception.Message}");
+                    $"Lobby join failed: {exception.Message}");
 
                 HandleClosed("connection_lost");
             }
@@ -242,19 +311,46 @@ namespace Kodimodi
             try
             {
                 envelope = WsProtocol.Unpack(data);
+
+                if (envelope == null)
+                    throw new FormatException("Empty envelope.");
             }
-            catch
+            catch (Exception exception)
             {
+                Debug.LogWarning(
+                    $"Lobby response error: {exception.Message}");
+
+                HandleClosed("protocol_error");
                 return;
             }
 
+            // Десериализация выполняется отдельно от событий UI.
             switch (envelope.Type)
             {
                 case WsMessageType.LobbyState:
                 {
-                    var state =
-                        WsProtocol.UnpackPayload<LobbyStateModel>(
-                            envelope);
+                    LobbyStateModel state;
+
+                    try
+                    {
+                        state =
+                            WsProtocol.UnpackPayload<LobbyStateModel>(
+                                envelope);
+
+                        if (state == null || state.Players == null)
+                            throw new FormatException("Invalid lobby state.");
+
+                        foreach (var player in state.Players)
+                        {
+                            if (player == null)
+                                throw new FormatException("Invalid player.");
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        HandleProtocolError(exception);
+                        return;
+                    }
 
                     ApplyLobbyState(state);
                     StateReceived?.Invoke(state);
@@ -263,12 +359,31 @@ namespace Kodimodi
 
                 case WsMessageType.MatchStarted:
                 {
+                    MatchStartedModel match;
+
+                    try
+                    {
+                        match =
+                            WsProtocol.UnpackPayload<MatchStartedModel>(
+                                envelope);
+
+                        if (match == null ||
+                            string.IsNullOrWhiteSpace(match.RoomId) ||
+                            string.IsNullOrWhiteSpace(match.BattleToken))
+                        {
+                            throw new FormatException(
+                                "Invalid match session.");
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        HandleProtocolError(exception);
+                        return;
+                    }
+
                     finished = true;
                     starting = true;
-
-                    var match =
-                        WsProtocol.UnpackPayload<MatchStartedModel>(
-                            envelope);
+                    ClearOperation();
 
                     BrowserUrl.ClearRoomParam();
 
@@ -292,9 +407,22 @@ namespace Kodimodi
 
                 case WsMessageType.RoomClosed:
                 {
-                    var closed =
-                        WsProtocol.UnpackPayload<RoomClosedModel>(
-                            envelope);
+                    RoomClosedModel closed;
+
+                    try
+                    {
+                        closed =
+                            WsProtocol.UnpackPayload<RoomClosedModel>(
+                                envelope);
+
+                        if (closed == null)
+                            throw new FormatException("Invalid room close.");
+                    }
+                    catch (Exception exception)
+                    {
+                        HandleProtocolError(exception);
+                        return;
+                    }
 
                     HandleClosed(closed.Reason);
                     break;
@@ -302,11 +430,22 @@ namespace Kodimodi
             }
         }
 
+        private void HandleProtocolError(Exception exception)
+        {
+            Debug.LogWarning(
+                $"Lobby payload error: {exception.Message}");
+
+            HandleClosed("protocol_error");
+        }
+
         private void ApplyLobbyState(LobbyStateModel state)
         {
             connected = true;
             IsHost = state.YourId == state.HostId;
             playerCount = state.Players.Length;
+
+            if (!starting && !leaving)
+                ClearOperation();
 
             int yourIndex = -1;
             int hostIndex = -1;
@@ -376,9 +515,16 @@ namespace Kodimodi
             }
 
             if (ws == null || ws.State != WebSocketState.Open)
+            {
+                HandleClosed("connection_lost");
                 return;
+            }
 
             starting = true;
+
+            BeginOperation(
+                ActionTimeoutSeconds,
+                "start_timeout");
 
             if (view != null)
             {
@@ -414,6 +560,10 @@ namespace Kodimodi
             {
                 leaving = true;
 
+                BeginOperation(
+                    ActionTimeoutSeconds,
+                    "cancel_timeout");
+
                 if (view != null)
                 {
                     view.SetStatus("Закрываем комнату…");
@@ -444,16 +594,20 @@ namespace Kodimodi
         private void UpdateLink(string code)
         {
             matchLink = RoomLinkChecker.BuildLink(
-                code, editorTestUrl);
+                code,
+                editorTestUrl);
 
             if (view != null)
                 view.SetLink(matchLink);
         }
 
-        // ---------- Закрытие и ошибки ----------
+        // ---------- Ошибки и закрытие ----------
 
         private void HandleClosed(string reason)
         {
+            if (finished)
+                return;
+
             bool expectedClose =
                 leaving &&
                 (reason == "cancelled" ||
@@ -462,7 +616,6 @@ namespace Kodimodi
 
             finished = true;
 
-            // Сначала закрываем лобби и останавливаем соединение.
             ReturnHome();
 
             if (!expectedClose)
@@ -477,39 +630,53 @@ namespace Kodimodi
 
         private static string GetCloseMessage(string reason)
         {
-            switch (reason)
+            return reason switch
             {
-                case "cancelled":
-                    return "Создатель отменил матч.";
+                "cancelled" =>
+                    "Создатель отменил матч.",
 
-                case "host_left":
-                    return "Создатель вышел и закрыл лобби.";
+                "host_left" =>
+                    "Создатель вышел и закрыл лобби.",
 
-                case "room_not_found":
-                    return "Комната не найдена или больше не существует.";
+                "room_not_found" =>
+                    "Комната не найдена или больше не существует.",
 
-                case "full":
-                    return "В комнате нет свободных мест.";
+                "full" =>
+                    "В комнате нет свободных мест.",
 
-                case "started":
-                    return "Матч уже начался.";
+                "started" =>
+                    "Матч уже начался.",
 
-                case "duplicate":
-                    return "Ты уже подключён к этой комнате.";
+                "duplicate" =>
+                    "Ты уже подключён к этой комнате.",
 
-                case "closed":
-                    return "Комната закрыта.";
+                "closed" =>
+                    "Комната закрыта.",
 
-                case "connection_lost":
-                    return
-                        "Соединение с лобби потеряно.\n\n" +
-                        "Проверь подключение и попробуй ещё раз.";
+                "connection_timeout" =>
+                    "Сервер не ответил вовремя.\n\n" +
+                    "Проверь подключение и попробуй войти ещё раз.",
 
-                default:
-                    return
-                        "Лобби стало недоступно.\n\n" +
-                        "Попробуй подключиться снова.";
-            }
+                "start_timeout" =>
+                    "Не удалось дождаться запуска матча.\n\n" +
+                    "Попробуй войти в комнату заново.",
+
+                "cancel_timeout" =>
+                    "Сервер не подтвердил закрытие комнаты.\n\n" +
+                    "Соединение с лобби закрыто.",
+
+                "protocol_error" =>
+                    "Сервер вернул некорректные данные.\n\n" +
+                    "Обнови страницу и попробуй ещё раз.",
+
+                "connection_lost" =>
+                    "Соединение с лобби потеряно.\n\n" +
+                    "Проверь подключение и попробуй ещё раз.",
+
+                _ =>
+                    "Лобби стало недоступно.\n\n" +
+                    "Попробуй подключиться снова."
+            };
         }
 
         private void ReturnHome()
@@ -529,6 +696,7 @@ namespace Kodimodi
             connected = false;
             starting = false;
             leaving = false;
+            previewErrorShown = false;
 
             capacity = 0;
             playerCount = 0;
@@ -538,6 +706,22 @@ namespace Kodimodi
                 view.SetLoading(false);
                 view.ClearPlayers();
             }
+        }
+
+        // ---------- Ожидание ответа ----------
+
+        private void BeginOperation(float seconds, string reason)
+        {
+            operationDeadline =
+                Time.realtimeSinceStartupAsDouble + seconds;
+
+            operationTimeoutReason = reason;
+        }
+
+        private void ClearOperation()
+        {
+            operationDeadline = 0;
+            operationTimeoutReason = null;
         }
 
         // ---------- WebSocket ----------
@@ -552,21 +736,42 @@ namespace Kodimodi
             Send(WsMessageType.CancelMatch);
         }
 
-        private void Send(WsMessageType type)
+        private async void Send(WsMessageType type)
         {
-            if (ws != null && ws.State == WebSocketState.Open)
-                ws.Send(WsProtocol.Pack(type));
+            var socket = ws;
+
+            if (socket == null ||
+                socket.State != WebSocketState.Open)
+            {
+                if (!finished)
+                    HandleClosed("connection_lost");
+
+                return;
+            }
+
+            try
+            {
+                await socket.Send(WsProtocol.Pack(type));
+            }
+            catch (Exception exception)
+            {
+                if (ws != socket || finished)
+                    return;
+
+                Debug.LogWarning(
+                    $"Lobby send failed: {exception.Message}");
+
+                HandleClosed("connection_lost");
+            }
         }
 
         public void Disconnect()
         {
             finished = true;
             connected = false;
+            ClearOperation();
 
-            if (ws == null)
-                return;
-
-            WebSocket old = ws;
+            var old = ws;
             ws = null;
 
             SafeClose(old);
@@ -577,6 +782,16 @@ namespace Kodimodi
 #if !UNITY_WEBGL || UNITY_EDITOR
             ws?.DispatchMessageQueue();
 #endif
+
+            if (!finished &&
+                operationDeadline > 0 &&
+                Time.realtimeSinceStartupAsDouble >= operationDeadline)
+            {
+                string reason = operationTimeoutReason;
+                ClearOperation();
+
+                HandleClosed(reason);
+            }
         }
 
         private void OnDestroy()
@@ -586,17 +801,17 @@ namespace Kodimodi
 
         private static async void SafeClose(WebSocket socket)
         {
+            if (socket == null)
+                return;
+
             try
             {
-                if (socket != null &&
-                    socket.State == WebSocketState.Open)
-                {
+                if (socket.State == WebSocketState.Open)
                     await socket.Close();
-                }
             }
             catch
             {
-                // Соединение уже закрыто.
+                // Ошибку обычного закрытия пользователю не показываем.
             }
         }
     }

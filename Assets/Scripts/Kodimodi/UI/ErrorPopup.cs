@@ -1,3 +1,4 @@
+using System.Linq;
 using Lean.Gui;
 using TMPro;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine;
 namespace Kodimodi.UI
 {
     [RequireComponent(typeof(LeanWindow))]
+    [RequireComponent(typeof(CanvasGroup))]
     public class ErrorPopup : MonoBehaviour
     {
         [Header("Текст")]
@@ -13,18 +15,55 @@ namespace Kodimodi.UI
 
         private LeanWindow window;
 
+        private void Awake()
+        {
+            Initialize();
+            window.TurnOff();
+        }
+
+        private void Initialize()
+        {
+            if (window == null)
+                window = GetComponent<LeanWindow>();
+
+            if (titleText == null)
+                titleText = FindPanelText("Title");
+
+            if (messageText == null)
+                messageText = FindPanelText("Message");
+        }
+
+        private TMP_Text FindPanelText(string objectName)
+        {
+            var panel = transform.Find("Panel");
+
+            if (panel == null)
+                return null;
+
+            var candidates = panel
+                .GetComponentsInChildren<TMP_Text>(true)
+                .Where(text =>
+                    text.transform.parent == panel &&
+                    text.gameObject.name == objectName)
+                .ToArray();
+
+            // При наличии дублей предпочитаем включённый текст.
+            return candidates.FirstOrDefault(
+                       text => text.gameObject.activeSelf)
+                   ?? candidates.FirstOrDefault();
+        }
+
         public static void Show(
             string message,
             string title = "Ошибка")
         {
-            ErrorPopup popup = FindAnyObjectByType<ErrorPopup>(
+            var popup = FindAnyObjectByType<ErrorPopup>(
                 FindObjectsInactive.Include);
 
             if (popup == null)
             {
                 Debug.LogError(
                     $"ErrorPopup не найден. {title}: {message}");
-
                 return;
             }
 
@@ -33,34 +72,41 @@ namespace Kodimodi.UI
 
         private void Open(string message, string title)
         {
-            if (window == null)
-                window = GetComponent<LeanWindow>();
-
-            if (titleText != null)
-                titleText.text = title;
-
-            if (messageText != null)
-            {
-                messageText.richText = false;
-                messageText.text = message;
-            }
-
+            // Активация вызывает Awake, если объект
+            // изначально был выключен.
             if (!gameObject.activeSelf)
                 gameObject.SetActive(true);
 
-            // Popup должен находиться поверх остальных элементов Canvas.
-            transform.SetAsLastSibling();
+            Initialize();
 
+            SetText(titleText, title);
+            SetText(messageText, message);
+
+            if (titleText == null || messageText == null)
+            {
+                Debug.LogError(
+                    "ErrorPopup: не найдены Title или Message.",
+                    this);
+            }
+
+            transform.SetAsLastSibling();
             window.TurnOn();
+        }
+
+        private static void SetText(TMP_Text target, string value)
+        {
+            if (target == null)
+                return;
+
+            target.gameObject.SetActive(true);
+            target.richText = false;
+            target.text = value ?? "";
         }
 
         public void Close()
         {
-            if (window == null)
-                window = GetComponent<LeanWindow>();
-
-            if (window != null)
-                window.TurnOff();
+            Initialize();
+            window.TurnOff();
         }
     }
 }
