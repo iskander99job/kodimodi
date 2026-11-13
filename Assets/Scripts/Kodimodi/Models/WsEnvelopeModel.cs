@@ -32,6 +32,9 @@ namespace Kodimodi.Models
         BattleClosed = 17,
         BattleHeartbeat = 18,
         BattleHeartbeatAck = 19,
-        PlayerReload = 20
+        PlayerReload = 20,
+        BattleReady = 21,
+        BattleCountdown = 22,
+        BattleStarted = 23
     }
 }

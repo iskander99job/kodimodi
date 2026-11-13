@@ -39,8 +39,6 @@ namespace Kodimodi
 
         private readonly HashSet<int> departedPlayerIds = new();
         
-        [Header("Потеря соединения")]
-        [SerializeField] private LeanWindow connectionLostPopup;
         public IReadOnlyCollection<int> DepartedPlayerIds =>
             departedPlayerIds;
 
@@ -54,10 +52,16 @@ namespace Kodimodi
         private float openedAt;
         private float lastReceivedAt;
         private float nextHeartbeatAt;
+        public bool HasBattleConnection => opened;
 
+        public bool HasLocalPlayer =>
+            battleReady && localPlayer != null;
+
+        public bool IsLocalCameraReady => desiredReady;
         public bool VideoMovementBlocked { get; private set; }
 
         public bool CanPublishPlayerState =>
+            IsBattleStarted &&
             !IsMatchEnded &&
             !IsDisconnected &&
             !leaving &&
@@ -86,6 +90,21 @@ namespace Kodimodi
         public MatchEndedModel FinalResult { get; private set; }
 
         private GameObject localPlayer;
+        public GameObject LocalPlayer => localPlayer;
+        
+        public bool IsBattleStarted { get; private set; }
+
+        public BattleCountdownModel LastCountdown { get; private set; }
+        public double CountdownDeadline { get; private set; }
+
+        public event Action<BattleCountdownModel> CountdownUpdated;
+        public event Action BattlePlayStarted;
+
+        private int countdownVersion = -1;
+
+        private bool desiredReady;
+        private bool? sentReady;
+        private bool readySending;
 
         private void Awake()
         {
@@ -170,6 +189,15 @@ namespace Kodimodi
 
                 switch (model.Type)
                 {
+                    case WsMessageType.BattleCountdown:
+                        HandleCountdown(
+                            WsProtocol.UnpackPayload<BattleCountdownModel>(model));
+                        break;
+
+                    case WsMessageType.BattleStarted:
+                        HandleBattleStarted(
+                            WsProtocol.UnpackPayload<BattleStartedModel>(model));
+                        break;
                     case WsMessageType.BattlePingResponse: HandleSpawn(model); break;
                     case WsMessageType.PlayerBodyPosition: HandleBodyPosition(model); break;
                     case WsMessageType.Shoot: HandleShoot(model); break;
@@ -211,6 +239,113 @@ namespace Kodimodi
             }
         }
 
+        private void HandleCountdown(BattleCountdownModel model)
+{
+    if (IsBattleStarted ||
+        IsMatchEnded ||
+        IsDisconnected ||
+        leaving ||
+        model.Version < countdownVersion)
+    {
+        return;
+    }
+
+    // Повторное сообщение не должно перезапускать таймер.
+    if (model.Version == countdownVersion)
+        return;
+
+    countdownVersion = model.Version;
+    LastCountdown = model;
+
+    if (model.StartsAtUnixMs > 0)
+    {
+        double seconds = Math.Max(
+            0,
+            (model.StartsAtUnixMs - model.ServerNowUnixMs) / 1000.0);
+
+        CountdownDeadline =
+            Time.realtimeSinceStartupAsDouble + seconds;
+    }
+    else
+    {
+        CountdownDeadline = 0;
+    }
+
+    CountdownUpdated?.Invoke(model);
+}
+
+private void HandleBattleStarted(BattleStartedModel model)
+{
+    if (IsBattleStarted ||
+        IsMatchEnded ||
+        IsDisconnected ||
+        leaving ||
+        model.Version < countdownVersion)
+    {
+        return;
+    }
+
+    countdownVersion = model.Version;
+    IsBattleStarted = true;
+
+    LastCountdown = null;
+    CountdownDeadline = 0;
+
+    BattlePlayStarted?.Invoke();
+}
+
+public async void SetBattleReady(bool ready)
+{
+    desiredReady = ready;
+
+    if (readySending ||
+        !battleReady ||
+        websocket == null ||
+        IsBattleStarted ||
+        IsMatchEnded ||
+        IsDisconnected ||
+        leaving)
+    {
+        return;
+    }
+
+    readySending = true;
+
+    try
+    {
+        while (!IsBattleStarted &&
+               !IsMatchEnded &&
+               !IsDisconnected &&
+               !leaving &&
+               websocket != null &&
+               (!sentReady.HasValue || sentReady.Value != desiredReady))
+        {
+            bool value = desiredReady;
+
+            await websocket.Send(
+                WsProtocol.Pack(
+                    WsMessageType.BattleReady,
+                    new BattleReadyModel
+                    {
+                        Ready = value
+                    }));
+
+            sentReady = value;
+        }
+    }
+    catch (Exception e)
+    {
+        Debug.LogWarning(
+            "Battle ready send failed: " + e.Message);
+
+        FailConnection("connection_lost");
+    }
+    finally
+    {
+        readySending = false;
+    }
+}
+        
         public async void SendReloadState(bool isReloading)
         {
             if (websocket == null ||
@@ -294,6 +429,10 @@ namespace Kodimodi
 
         private void FailConnection(string reason)
         {
+            Debug.Log(
+                $"[BattleClient] FailConnection: {reason}; " +
+                $"leaving={leaving}; disconnected={IsDisconnected}; " +
+                $"ended={IsMatchEnded}");
             if (leaving || IsDisconnected) return;
 
             // После окончания матча сохраняем финальные окна.
@@ -481,8 +620,13 @@ namespace Kodimodi
 
         private void LateUpdate()
         {
-            if (IsMatchEnded || IsDisconnected || VideoMovementBlocked)
+            if (!IsBattleStarted ||
+                IsMatchEnded ||
+                IsDisconnected ||
+                VideoMovementBlocked)
+            {
                 FPSFrameworkCore.IsInputActive = false;
+            }
         }
 
         private void Update()

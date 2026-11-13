@@ -1,9 +1,8 @@
 using System;
 using Akila.FPSFramework;
-using Lean.Gui;
+using Kodimodi.UI;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Kodimodi
 {
@@ -14,55 +13,104 @@ namespace Kodimodi
         private const double StartupGraceSeconds = 5;
         private const double RecoverySeconds = 15;
 
-        [Header("Окно восстановления камеры")]
-        [SerializeField] private LeanWindow popup;
-        [SerializeField] private TMP_Text message;
-
-        [Header("Возврат")]
-        [SerializeField] private string profileScene = "ProfileScene";
-
         private BattleClient battle;
+        private BattleUIManager ui;
+
+        private CanvasGroup recoveryWindow;
+        private CanvasGroup timeoutWindow;
+
+        private TMP_Text description;
+        private TMP_Text timerText;
+        private RectTransform progressFill;
+        private Vector3 progressInitialScale;
+
         private bool watching;
         private bool blocked;
-        private bool exiting;
         private bool hadReady;
-
-        private bool previousInput;
-        private CursorLockMode previousCursor;
-        private bool previousCursorVisible;
+        private bool timedOut;
 
         private string lastState = "network";
         private double graceDeadline;
         private double recoveryDeadline;
 
+        public bool HasTimedOut => timedOut;
+
         private void Awake()
         {
             battle = GetComponent<BattleClient>();
 
-            if (popup != null)
-                popup.TurnOff();
+            ui = FindAnyObjectByType<BattleUIManager>(
+                FindObjectsInactive.Include);
+
+            FindWindows();
+
+            SetVisible(recoveryWindow, false);
+            SetVisible(timeoutWindow, false);
+        }
+
+        private void FindWindows()
+        {
+            var groups = FindObjectsByType<CanvasGroup>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            foreach (var group in groups)
+            {
+                if (group.gameObject.name == "CameraRecoveryUI")
+                    recoveryWindow = group;
+                else if (group.gameObject.name == "CameraTimeoutUI")
+                    timeoutWindow = group;
+            }
+
+            if (recoveryWindow == null)
+                return;
+
+            description = FindText(
+                recoveryWindow.transform,
+                "Content/Description");
+
+            timerText = FindText(
+                recoveryWindow.transform,
+                "Content/Countdown/TimerText");
+
+            var fill = recoveryWindow.transform.Find(
+                "Content/Countdown/ProgressTrack/ProgressFill");
+
+            if (fill != null)
+            {
+                progressFill = fill.GetComponent<RectTransform>();
+
+                if (progressFill != null)
+                    progressInitialScale = progressFill.localScale;
+            }
         }
 
         public bool BeginWatch()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
+            if (timedOut)
+                return false;
+
             if (watching)
                 return true;
 
-            if (popup == null || message == null)
+            if (ui == null ||
+                recoveryWindow == null ||
+                timeoutWindow == null ||
+                timerText == null ||
+                description == null)
             {
                 Debug.LogError(
-                    "Назначь Popup и Message в BattleCameraGuard.",
+                    "BattleCameraGuard: проверь BattleUIManager, " +
+                    "CameraRecoveryUI, CameraTimeoutUI и их структуру.",
                     this);
 
-                ExitToProfile();
+                battle.Leave();
                 return false;
             }
 
             watching = true;
-            exiting = false;
             hadReady = false;
-
             lastState = "network";
 
             graceDeadline =
@@ -71,9 +119,8 @@ namespace Kodimodi
 
             recoveryDeadline = 0;
 
-            // Подключаемся сразу, но первые 5 секунд
-            // не блокируем игрока и не показываем popup.
-            popup.TurnOff();
+            SetVisible(recoveryWindow, false);
+            SetVisible(timeoutWindow, false);
 
             return true;
 #else
@@ -84,14 +131,11 @@ namespace Kodimodi
 #endif
         }
 
-        // Обычное состояние: отсутствие трека
-        // при первоначальном запуске ещё не ошибка.
         public void OnBattleCameraState(string state)
         {
             HandleState(state, false);
         }
 
-        // Явная ошибка SDK не ждёт окончания первых 5 секунд.
         public void OnBattleVideoError(string state)
         {
             HandleState(state, true);
@@ -99,7 +143,7 @@ namespace Kodimodi
 
         private bool CanWatch()
         {
-            if (!watching || exiting)
+            if (!watching || timedOut)
                 return false;
 
             if (battle == null ||
@@ -110,11 +154,12 @@ namespace Kodimodi
                 return false;
             }
 
-            // Поздний ready и кнопка повтора
-            // не отменяют истёкший срок.
-            if (Expired())
+            // Поздний ready не отменяет истёкший срок.
+            if (blocked &&
+                recoveryDeadline > 0 &&
+                Time.realtimeSinceStartupAsDouble >= recoveryDeadline)
             {
-                ExitToProfile();
+                ShowTimeout();
                 return false;
             }
 
@@ -133,8 +178,9 @@ namespace Kodimodi
                 hadReady = true;
                 recoveryDeadline = 0;
 
-                popup.TurnOff();
+                SetVisible(recoveryWindow, false);
                 SetBlocked(false);
+                battle.SetBattleReady(true);
 
                 return;
             }
@@ -144,12 +190,13 @@ namespace Kodimodi
                 blocked ||
                 Time.realtimeSinceStartupAsDouble >= graceDeadline)
             {
-                ShowProblem();
+                ShowRecovery();
             }
         }
 
-        private void ShowProblem()
+        private void ShowRecovery()
         {
+            battle.SetBattleReady(false);
             if (!blocked)
             {
                 recoveryDeadline =
@@ -157,20 +204,13 @@ namespace Kodimodi
                     RecoverySeconds;
 
                 SetBlocked(true);
-                popup.TurnOn();
+                SetVisible(recoveryWindow, true);
+
+                // Поверх открытых статистики/меню.
+                recoveryWindow.transform.SetAsLastSibling();
             }
 
-            // Повторные ошибки и смена network/missing
-            // не продлевают срок.
-            UpdateMessage();
-        }
-
-        private bool Expired()
-        {
-            return blocked &&
-                   recoveryDeadline > 0 &&
-                   Time.realtimeSinceStartupAsDouble >=
-                   recoveryDeadline;
+            UpdateRecovery();
         }
 
         private void Update()
@@ -182,35 +222,48 @@ namespace Kodimodi
                 !hadReady &&
                 Time.realtimeSinceStartupAsDouble >= graceDeadline)
             {
-                ShowProblem();
+                ShowRecovery();
             }
 
             if (!blocked)
                 return;
 
             FPSFrameworkCore.IsInputActive = false;
-
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            UpdateMessage();
+            UpdateRecovery();
         }
 
-        private void UpdateMessage()
+        private void UpdateRecovery()
         {
-            int seconds = Math.Max(
+            double remaining = Math.Max(
                 0,
-                (int)Math.Ceiling(
-                    recoveryDeadline -
-                    Time.realtimeSinceStartupAsDouble));
+                recoveryDeadline -
+                Time.realtimeSinceStartupAsDouble);
 
-            message.text = lastState == "missing"
-                ? "Видео с камеры недоступно.\n" +
-                  "Движение заблокировано.\n\n" +
-                  $"Включи камеру: осталось {seconds} сек."
-                : "Нет связи с LiveKit.\n" +
-                  "Движение заблокировано.\n\n" +
-                  $"Восстанавливаем подключение: осталось {seconds} сек.";
+            if (timerText != null)
+                timerText.text = ((int)Math.Ceiling(remaining)).ToString();
+
+            if (description != null)
+            {
+                description.text = lastState == "missing"
+                    ? "Видео с камеры недоступно. " +
+                      "Включите камеру, чтобы продолжить игру."
+                    : "Нет связи с LiveKit. " +
+                      "Восстанавливаем подключение.";
+            }
+
+            if (progressFill != null)
+            {
+                float fraction = Mathf.Clamp01(
+                    (float)(remaining / RecoverySeconds));
+
+                progressFill.localScale = new Vector3(
+                    progressInitialScale.x * fraction,
+                    progressInitialScale.y,
+                    progressInitialScale.z);
+            }
         }
 
         private void SetBlocked(bool value)
@@ -218,35 +271,53 @@ namespace Kodimodi
             if (blocked == value)
                 return;
 
-            if (value)
-            {
-                previousInput = FPSFrameworkCore.IsInputActive;
-                previousCursor = Cursor.lockState;
-                previousCursorVisible = Cursor.visible;
-            }
-
             blocked = value;
-
-            if (battle == null)
-                return;
-
-            battle.SetVideoMovementBlocked(value);
+            battle?.SetVideoMovementBlocked(value);
 
             if (value)
             {
                 FPSFrameworkCore.IsInputActive = false;
-
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
-            else if (battle.CanPlay && !FPSFrameworkCore.IsPaused)
+            else if (!timedOut)
             {
-                // Сохраняем состояние открытой статистики или меню.
-                FPSFrameworkCore.IsInputActive = previousInput;
-
-                Cursor.lockState = previousCursor;
-                Cursor.visible = previousCursorVisible;
+                // Менеджер учитывает открытую статистику и меню.
+                ui?.RefreshMatchInput();
             }
+        }
+
+        private void ShowTimeout()
+        {
+            if (timedOut)
+                return;
+
+            // До Leave: он вызывает EndWatch().
+            timedOut = true;
+
+            battle.Leave();
+
+            SetVisible(recoveryWindow, false);
+
+            ui?.OnCameraRecoveryTimedOut();
+
+            var timeoutDescription = FindText(
+                timeoutWindow.transform,
+                "Content/Description");
+
+            if (timeoutDescription != null)
+            {
+                timeoutDescription.text =
+                    "Не удалось восстановить видео за отведённое время. " +
+                    "Вы отключены от матча.";
+            }
+
+            SetVisible(timeoutWindow, true);
+            timeoutWindow.transform.SetAsLastSibling();
+
+            FPSFrameworkCore.IsInputActive = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         public void RetryCamera()
@@ -254,46 +325,23 @@ namespace Kodimodi
             if (!CanWatch() || !blocked)
                 return;
 
-            // Повторяем подключение, если потеряна комната,
-            // либо восстанавливаем саму камеру.
+            // Повтор не продлевает срок восстановления.
             GetComponent<Livekit>()?.RetryCamera();
         }
 
+        // Оставляем публичный метод для совместимости.
         public void ExitToProfile()
         {
-            if (exiting)
-                return;
-
-            exiting = true;
-
-            battle?.Leave();
-            EndWatch();
-
-            MatchSession.RoomId = null;
-            MatchSession.PlayerId = 0;
-            MatchSession.BattleToken = null;
-
-            // Статические флаги FPS Framework
-            // переживают смену сцены.
-            FPSFrameworkCore.IsInputActive = true;
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
-            SceneManager.LoadSceneAsync(profileScene);
+            ui?.OnConnectionLostHomeBtnClick();
         }
 
         public void EndWatch()
         {
-            if (!watching)
-                return;
-
             watching = false;
 
             GetComponent<LivekitCameraMonitor>()?.Unbind();
 
-            if (popup != null)
-                popup.TurnOff();
+            SetVisible(recoveryWindow, false);
 
             SetBlocked(false);
             recoveryDeadline = 0;
@@ -302,6 +350,29 @@ namespace Kodimodi
         private void OnDisable()
         {
             EndWatch();
+        }
+
+        private static TMP_Text FindText(
+            Transform root, string path)
+        {
+            var child = root.Find(path);
+
+            return child != null
+                ? child.GetComponent<TMP_Text>()
+                : null;
+        }
+
+        private static void SetVisible(
+            CanvasGroup window, bool visible)
+        {
+            if (window == null)
+                return;
+
+            window.alpha = visible ? 1f : 0f;
+            window.interactable = visible;
+            window.blocksRaycasts = visible;
+
+            window.gameObject.SetActive(visible);
         }
     }
 }
