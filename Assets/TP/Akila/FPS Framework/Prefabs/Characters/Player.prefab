@@ -696,7 +696,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 19.155, y: -20.55}
+  m_AnchoredPosition: {x: 19.155, y: -4}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6383818212697506837
@@ -1309,8 +1309,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  useFirstPersonDeathView: 0
   health: 100
   destroyDelay: 0
+  allowBulletDecals: 1
   damageCameraShake: 0.2
   destroyOnDeath: 1
   destroyRoot: 0
@@ -1826,7 +1828,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 66.32, y: -18.42775}
-  m_SizeDelta: {x: 54.02, y: 28.8555}
+  m_SizeDelta: {x: 0, y: 28.8555}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1278505841890328405
 CanvasRenderer:
