@@ -14,6 +14,7 @@ namespace Kodimodi.UI
 
         private LobbyClient lobby;
         private ProfileController profile;
+        private ConsentPopupController consentController;
 
         private string roomCode;
         private bool canJoin;
@@ -40,6 +41,9 @@ namespace Kodimodi.UI
 
         private void Awake()
         {
+            consentController = FindAnyObjectByType<ConsentPopupController>(
+                FindObjectsInactive.Include);
+            
             lobby = GetComponent<LobbyClient>();
 
             profile = FindAnyObjectByType<ProfileController>();
@@ -273,6 +277,10 @@ namespace Kodimodi.UI
             if (!IsPreviewing || !canJoin)
                 return;
 
+            if (consentController == null || !consentController.CheckConsent())
+                return;
+
+            
             if (profile == null)
                 profile = FindAnyObjectByType<ProfileController>();
 

@@ -24,10 +24,17 @@ namespace Kodimodi.UI
         private ProfileController profile;
         private MediaAccessController mediaAccess;
         private PermissionHelpView permissionHelp;
+        private ConsentPopupController consentController;
 
         private static readonly Color InactiveBadge =
             new Color32(225, 225, 225, 255);
 
+        private void Awake()
+        {
+            consentController = FindAnyObjectByType<ConsentPopupController>(
+                FindObjectsInactive.Include);
+        }
+        
         public void Bind(
             ProfileController profileController,
             MediaAccessController accessController,
@@ -164,6 +171,9 @@ namespace Kodimodi.UI
 
         public void OnEnableDevicesClick()
         {
+            if (consentController == null || !consentController.CheckConsent())
+                return;
+            
             if (profile != null &&
                 profile.isActiveAndEnabled &&
                 !profile.DeviceOperationPending)

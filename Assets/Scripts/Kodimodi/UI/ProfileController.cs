@@ -19,6 +19,7 @@ namespace Kodimodi.UI
         private PermissionHelpView permissionHelp;
         private LobbyClient lobbyClient;
         private DeviceSetupView deviceView;
+        private ConsentPopupController consentController;
 
         private Coroutine cameraRoutine;
 
@@ -57,6 +58,9 @@ namespace Kodimodi.UI
 
         private void Awake()
         {
+            consentController = FindAnyObjectByType<ConsentPopupController>(
+                FindObjectsInactive.Include);
+            
             mediaAccess =
                 FindAnyObjectByType<MediaAccessController>();
 
@@ -210,6 +214,9 @@ namespace Kodimodi.UI
 
         public void OnPlayButtonClick()
         {
+            if (consentController == null || !consentController.CheckConsent())
+                return;
+            
             if (!CanUpdateUI)
                 return;
 
