@@ -64,24 +64,28 @@ namespace Kodimodi.UI
 
         public bool CheckConsent()
         {
-            if (HasSavedConsent)
-                return true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return true;
+#else
+    if (HasSavedConsent)
+        return true;
 
-            if (!initialized || !isActiveAndEnabled)
-                return false;
+    if (!initialized || !isActiveAndEnabled)
+        return false;
 
-            if (!waitingForConsent)
-            {
-                waitingForConsent = true;
+    if (!waitingForConsent)
+    {
+        waitingForConsent = true;
 
-                firstToggle.SetIsOnWithoutNotify(false);
-                secondToggle.SetIsOnWithoutNotify(false);
+        firstToggle.SetIsOnWithoutNotify(false);
+        secondToggle.SetIsOnWithoutNotify(false);
 
-                UpdateDoneButton();
-                consentPopup.TurnOn();
-            }
+        UpdateDoneButton();
+        consentPopup.TurnOn();
+    }
 
-            return false;
+    return false;
+#endif
         }
 
         // Кнопка Done.

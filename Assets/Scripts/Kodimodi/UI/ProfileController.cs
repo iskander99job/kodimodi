@@ -214,9 +214,6 @@ namespace Kodimodi.UI
 
         public void OnPlayButtonClick()
         {
-            if (consentController == null || !consentController.CheckConsent())
-                return;
-            
             if (!CanUpdateUI)
                 return;
 

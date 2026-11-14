@@ -276,10 +276,6 @@ namespace Kodimodi.UI
         {
             if (!IsPreviewing || !canJoin)
                 return;
-
-            if (consentController == null || !consentController.CheckConsent())
-                return;
-
             
             if (profile == null)
                 profile = FindAnyObjectByType<ProfileController>();
