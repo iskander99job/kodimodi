@@ -55,8 +55,8 @@ namespace Kodimodi.UI
             if (descriptionText != null)
             {
                 descriptionText.text = capacity > 0
-                    ? $"Каждый сам за себя · До {capacity} игроков"
-                    : "Каждый сам за себя";
+                    ? $"Free-for-all · Up to {capacity} players"
+                    : "Free-for-all";
             }
         }
 
@@ -107,8 +107,8 @@ namespace Kodimodi.UI
                 if (leaveButtonText != null)
                 {
                     leaveButtonText.text = showStart
-                        ? "Отменить матч"
-                        : "Покинуть лобби";
+                        ? "Cancel match"
+                        : "Leave lobby";
                 }
             }
 
@@ -203,11 +203,11 @@ namespace Kodimodi.UI
                     if (label != null)
                     {
                         label.text = occupied
-                            ? $"Игрок {i + 1}"
-                            : "Ожидание игрока…";
+                            ? $"Player {i + 1}"
+                            : "Waiting for player…";
 
                         if (occupied && i == yourIndex)
-                            label.text += " — Вы";
+                            label.text += " — You";
 
                         label.color = contentColor;
                         label.fontStyle = occupied
@@ -241,8 +241,8 @@ namespace Kodimodi.UI
                     if (badgeText != null)
                     {
                         badgeText.text = i == yourIndex
-                            ? "ТЫ · СОЗДАТЕЛЬ"
-                            : "СОЗДАТЕЛЬ";
+                            ? "YOU · HOST"
+                            : "HOST";
                     }
                 }
 

@@ -55,7 +55,7 @@ namespace Kodimodi.UI
 
         public static void Show(
             string message,
-            string title = "Ошибка")
+            string title = "Error")
         {
             var popup = FindAnyObjectByType<ErrorPopup>(
                 FindObjectsInactive.Include);

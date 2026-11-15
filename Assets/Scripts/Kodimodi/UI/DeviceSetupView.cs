@@ -34,7 +34,7 @@ namespace Kodimodi.UI
             consentController = FindAnyObjectByType<ConsentPopupController>(
                 FindObjectsInactive.Include);
         }
-        
+
         public void Bind(
             ProfileController profileController,
             MediaAccessController accessController,
@@ -82,30 +82,30 @@ namespace Kodimodi.UI
 
             if (ready)
             {
-                status = "Включена";
-                description = "Видео работает";
+                status = "On";
+                description = "Video is working";
             }
             else if (profile.CameraStarting)
             {
-                status = "Запуск…";
-                description = "Ожидаем изображение с камеры";
+                status = "Starting…";
+                description = "Waiting for camera video";
             }
             else if (mediaAccess.RequestPending)
             {
-                status = "Ожидание";
-                description = "Разреши доступ в браузере";
+                status = "Waiting";
+                description = "Allow access in your browser";
             }
             else if (!mediaAccess.Initialized)
             {
-                status = "Проверяем…";
-                description = "Проверяем разрешение камеры";
+                status = "Checking…";
+                description = "Checking camera permission";
             }
             else
             {
-                status = "Не включена";
+                status = "Off";
                 description = mediaAccess.CameraGranted
-                    ? "Доступ есть, видео ещё не запущено"
-                    : "Доступ ещё не предоставлен";
+                    ? "Permission granted, video has not started yet"
+                    : "Permission not granted yet";
             }
 
             SetText(cameraStatus, status);
@@ -122,23 +122,23 @@ namespace Kodimodi.UI
 
             if (granted)
             {
-                status = "Доступ есть";
-                description = "Разрешение на микрофон получено";
+                status = "Access granted";
+                description = "Microphone permission granted";
             }
             else if (mediaAccess.RequestPending)
             {
-                status = "Ожидание";
-                description = "Разреши доступ в браузере";
+                status = "Waiting";
+                description = "Allow access in your browser";
             }
             else if (!mediaAccess.Initialized)
             {
-                status = "Проверяем…";
-                description = "Проверяем разрешение микрофона";
+                status = "Checking…";
+                description = "Checking microphone permission";
             }
             else
             {
-                status = "Не включён";
-                description = "Доступ ещё не предоставлен";
+                status = "Off";
+                description = "Permission not granted yet";
             }
 
             SetText(microphoneStatus, status);
@@ -158,13 +158,13 @@ namespace Kodimodi.UI
             string label;
 
             if (mediaAccess.RequestPending)
-                label = "Разреши доступ в браузере…";
+                label = "Allow access in your browser…";
             else if (profile.CameraStarting)
-                label = "Включаем камеру…";
+                label = "Starting camera…";
             else if (profile.MediaReady)
-                label = "Устройства готовы";
+                label = "Devices ready";
             else
-                label = "Включить камеру и микрофон";
+                label = "Enable camera and microphone";
 
             SetText(enableButtonText, label);
         }
@@ -173,7 +173,7 @@ namespace Kodimodi.UI
         {
             if (consentController == null || !consentController.CheckConsent())
                 return;
-            
+
             if (profile != null &&
                 profile.isActiveAndEnabled &&
                 !profile.DeviceOperationPending)

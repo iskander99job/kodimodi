@@ -110,7 +110,7 @@ namespace Kodimodi
                 view.ClearPlayers();
                 view.SetSummary(0, 0);
                 view.SetLoading(true);
-                view.SetStatus("Загружаем комнату…");
+                view.SetStatus("Loading room…");
                 view.SetActions(true, false, false, false);
             }
         }
@@ -139,13 +139,13 @@ namespace Kodimodi
         public void SetPreviewError(string message)
         {
             if (string.IsNullOrWhiteSpace(message))
-                message = "Проверь ссылку или попробуй подключиться позже.";
+                message = "Check the link or try joining again later.";
 
             ReturnHome();
 
             ErrorPopup.Show(
                 message,
-                "Не удалось загрузить комнату");
+                "Could not load the room");
         }
 
         public void JoinPreviewRoom()
@@ -153,8 +153,8 @@ namespace Kodimodi
             if (string.IsNullOrEmpty(RoomCode))
             {
                 ErrorPopup.Show(
-                    "Нет кода комнаты. Открой ссылку на матч заново.",
-                    "Не удалось войти");
+                    "The room code is missing. Open the match link again.",
+                    "Could not join");
                 return;
             }
 
@@ -176,8 +176,8 @@ namespace Kodimodi
             if (string.IsNullOrWhiteSpace(roomId))
             {
                 ErrorPopup.Show(
-                    "Не указан код комнаты.",
-                    "Не удалось подключиться");
+                    "No room code was provided.",
+                    "Could not connect");
                 return;
             }
 
@@ -198,7 +198,7 @@ namespace Kodimodi
             {
                 view.RenderPlayers(0, capacity);
                 view.SetLoading(true);
-                view.SetStatus("Подключаемся к комнате…");
+                view.SetStatus("Connecting to room…");
                 view.SetActions(false, false, IsHost, false);
             }
 
@@ -394,7 +394,7 @@ namespace Kodimodi
                     if (view != null)
                     {
                         view.SetLoading(true);
-                        view.SetStatus("Загружаем матч…");
+                        view.SetStatus("Loading match…");
                         view.SetActions(
                             false, false, false, false, false);
                     }
@@ -482,22 +482,22 @@ namespace Kodimodi
 
             if (leaving)
             {
-                view.SetStatus("Закрываем комнату…");
+                view.SetStatus("Closing room…");
             }
             else if (starting)
             {
-                view.SetStatus("Запускаем матч…");
+                view.SetStatus("Starting match…");
             }
             else if (IsHost)
             {
                 view.SetStatus(
                     playerCount >= MinPlayers
-                        ? "Можно начать матч, не дожидаясь заполнения комнаты."
-                        : "Ждём игроков…");
+                        ? "You can start the match without waiting for the room to fill up."
+                        : "Waiting for players…");
             }
             else
             {
-                view.SetStatus("Ожидаем запуска от создателя…");
+                view.SetStatus("Waiting for the host to start the match…");
             }
         }
 
@@ -529,7 +529,7 @@ namespace Kodimodi
             if (view != null)
             {
                 view.SetLoading(true);
-                view.SetStatus("Запускаем матч…");
+                view.SetStatus("Starting match…");
                 view.SetActions(false, false, true, false);
             }
 
@@ -544,7 +544,7 @@ namespace Kodimodi
             if (view != null)
             {
                 view.SetLoading(true);
-                view.SetStatus("Выходим из лобби…");
+                view.SetStatus("Leaving lobby…");
             }
 
             if (preview != null && preview.IsPreviewing)
@@ -566,7 +566,7 @@ namespace Kodimodi
 
                 if (view != null)
                 {
-                    view.SetStatus("Закрываем комнату…");
+                    view.SetStatus("Closing room…");
                     view.SetActions(
                         false, false, true, false, false);
                 }
@@ -622,7 +622,7 @@ namespace Kodimodi
             {
                 ErrorPopup.Show(
                     GetCloseMessage(reason),
-                    "Матч недоступен");
+                    "Match unavailable");
             }
 
             Closed?.Invoke(reason);
@@ -633,49 +633,49 @@ namespace Kodimodi
             return reason switch
             {
                 "cancelled" =>
-                    "Создатель отменил матч.",
+                    "The host cancelled the match.",
 
                 "host_left" =>
-                    "Создатель вышел и закрыл лобби.",
+                    "The host left and closed the lobby.",
 
                 "room_not_found" =>
-                    "Комната не найдена или больше не существует.",
+                    "The room was not found or no longer exists.",
 
                 "full" =>
-                    "В комнате нет свободных мест.",
+                    "The room is full.",
 
                 "started" =>
-                    "Матч уже начался.",
+                    "The match has already started.",
 
                 "duplicate" =>
-                    "Ты уже подключён к этой комнате.",
+                    "You are already connected to this room.",
 
                 "closed" =>
-                    "Комната закрыта.",
+                    "The room is closed.",
 
                 "connection_timeout" =>
-                    "Сервер не ответил вовремя.\n\n" +
-                    "Проверь подключение и попробуй войти ещё раз.",
+                    "The server did not respond in time.\n\n" +
+                    "Check your connection and try joining again.",
 
                 "start_timeout" =>
-                    "Не удалось дождаться запуска матча.\n\n" +
-                    "Попробуй войти в комнату заново.",
+                    "Timed out waiting for the match to start.\n\n" +
+                    "Try joining the room again.",
 
                 "cancel_timeout" =>
-                    "Сервер не подтвердил закрытие комнаты.\n\n" +
-                    "Соединение с лобби закрыто.",
+                    "The server did not confirm that the room was closed.\n\n" +
+                    "The connection to the lobby has been closed.",
 
                 "protocol_error" =>
-                    "Сервер вернул некорректные данные.\n\n" +
-                    "Обнови страницу и попробуй ещё раз.",
+                    "The server returned invalid data.\n\n" +
+                    "Refresh the page and try again.",
 
                 "connection_lost" =>
-                    "Соединение с лобби потеряно.\n\n" +
-                    "Проверь подключение и попробуй ещё раз.",
+                    "The connection to the lobby was lost.\n\n" +
+                    "Check your connection and try again.",
 
                 _ =>
-                    "Лобби стало недоступно.\n\n" +
-                    "Попробуй подключиться снова."
+                    "The lobby is no longer available.\n\n" +
+                    "Try connecting again."
             };
         }
 

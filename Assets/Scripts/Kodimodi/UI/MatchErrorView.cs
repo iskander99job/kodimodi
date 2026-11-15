@@ -13,6 +13,7 @@ namespace Kodimodi.UI
             Debug.Log(
                 $"[MatchErrorView] Show: {message}; " +
                 $"parentActive={transform.parent == null || transform.parent.gameObject.activeInHierarchy}");
+
             if (title == null)
                 title = FindText("Content/Title");
 
@@ -20,7 +21,7 @@ namespace Kodimodi.UI
                 description = FindText("Content/Description");
 
             if (title != null)
-                title.text = "Матч прерван";
+                title.text = "Match interrupted";
 
             if (description != null)
                 description.text = message;

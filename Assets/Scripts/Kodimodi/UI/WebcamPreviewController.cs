@@ -58,7 +58,7 @@ namespace Kodimodi.UI
 
             if (!isActiveAndEnabled || rawImage == null)
             {
-                LastError = "Предпросмотр камеры недоступен.";
+                LastError = "Camera preview is unavailable.";
                 yield break;
             }
 
@@ -76,9 +76,9 @@ namespace Kodimodi.UI
                 if (Time.realtimeSinceStartup >= deadline)
                 {
                     LastError =
-                        "Камера не начала передавать видео.\n\n" +
-                        "Проверь устройство и закрой другие " +
-                        "приложения, использующие камеру.";
+                        "The camera did not start streaming video.\n\n" +
+                        "Check your device and close other " +
+                        "applications that use the camera.";
 
                     StopPreview();
                     yield break;
@@ -89,7 +89,7 @@ namespace Kodimodi.UI
 
             if (webcamTexture == null || !webcamTexture.isPlaying)
             {
-                LastError = "Запуск камеры был прерван.";
+                LastError = "Camera startup was interrupted.";
                 StopPreview();
                 yield break;
             }
@@ -123,8 +123,8 @@ namespace Kodimodi.UI
                 Debug.LogException(exception, this);
 
                 LastError =
-                    "Не удалось запустить камеру.\n\n" +
-                    "Проверь устройство и разрешение браузера.";
+                    "Could not start the camera.\n\n" +
+                    "Check your device and browser permission.";
 
                 StopPreview();
                 return false;

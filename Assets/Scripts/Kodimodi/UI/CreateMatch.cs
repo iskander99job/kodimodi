@@ -111,8 +111,8 @@ namespace Kodimodi.UI
             if (lobby == null)
             {
                 ShowCreationError(
-                    "Не удалось открыть лобби. " +
-                    "Попробуй обновить страницу.");
+                    "Could not open the lobby. " +
+                    "Try refreshing the page.");
 
                 return;
             }
@@ -156,8 +156,8 @@ namespace Kodimodi.UI
                             $"{request.error}");
 
                         ShowCreationError(
-                            "Сервер недоступен или не ответил вовремя.\n\n" +
-                            "Попробуй ещё раз позже.");
+                            "The server is unavailable or did not respond in time.\n\n" +
+                            "Please try again later.");
 
                         yield break;
                     }
@@ -177,8 +177,8 @@ namespace Kodimodi.UI
                             exception.Message);
 
                         ShowCreationError(
-                            "Сервер вернул некорректный ответ.\n\n" +
-                            "Попробуй создать матч ещё раз.");
+                            "The server returned an invalid response.\n\n" +
+                            "Try creating the match again.");
 
                         yield break;
                     }
@@ -189,8 +189,8 @@ namespace Kodimodi.UI
                         response.maxPlayers < MinPlayers)
                     {
                         ShowCreationError(
-                            "Не удалось получить данные созданного матча.\n\n" +
-                            "Попробуй ещё раз.");
+                            "Could not retrieve data for the created match.\n\n" +
+                            "Please try again.");
 
                         yield break;
                     }
@@ -198,8 +198,8 @@ namespace Kodimodi.UI
                     if (lobby == null)
                     {
                         ShowCreationError(
-                            "Не удалось открыть лобби.\n\n" +
-                            "Попробуй обновить страницу.");
+                            "Could not open the lobby.\n\n" +
+                            "Try refreshing the page.");
 
                         yield break;
                     }
@@ -225,7 +225,7 @@ namespace Kodimodi.UI
             if (window != null)
                 window.TurnOff();
 
-            ErrorPopup.Show(message, "Не удалось создать матч");
+            ErrorPopup.Show(message, "Could not create the match");
         }
 
         private void SetBusy(bool value)

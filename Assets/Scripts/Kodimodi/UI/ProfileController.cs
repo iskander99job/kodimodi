@@ -60,7 +60,7 @@ namespace Kodimodi.UI
         {
             consentController = FindAnyObjectByType<ConsentPopupController>(
                 FindObjectsInactive.Include);
-            
+
             mediaAccess =
                 FindAnyObjectByType<MediaAccessController>();
 
@@ -138,8 +138,8 @@ namespace Kodimodi.UI
                     devicesRequested = true;
 
                 SetMessage(
-                    "Камера остановлена.\n\n" +
-                    "Повтори включение камеры и микрофона.");
+                    "The camera has stopped.\n\n" +
+                    "Try enabling the camera and microphone again.");
 
                 RefreshEntryUI();
             }
@@ -285,8 +285,8 @@ namespace Kodimodi.UI
                 return;
 
             SetMessage(
-                "Разреши доступ к камере и микрофону " +
-                "в окне браузера.");
+                "Allow access to your camera and microphone " +
+                "in your browser.");
 
             mediaAccess.RequestAccess(
                 requestVideo: !IsCameraReady);
@@ -325,13 +325,13 @@ namespace Kodimodi.UI
                 if (!mediaAccess.UnityCameraAuthorized)
                 {
                     SetMessage(
-                        "Не удалось получить доступ к камере.\n\n" +
-                        "Проверь разрешения и повтори попытку.");
+                        "Could not access the camera.\n\n" +
+                        "Check your permissions and try again.");
 
                     yield break;
                 }
 
-                SetMessage("Ожидаем изображение с камеры…");
+                SetMessage("Waiting for camera video…");
 
                 yield return webcamPreview.PlayRoutine();
 
@@ -342,15 +342,15 @@ namespace Kodimodi.UI
                 {
                     SetMessage(
                         webcamPreview.LastError ??
-                        "Не удалось запустить камеру.");
+                        "Could not start the camera.");
 
                     yield break;
                 }
 
                 SetMessage(
                     mediaAccess.MicrophoneGranted
-                        ? "Видео работает, доступ к микрофону получен."
-                        : "Для игры также нужен доступ к микрофону.");
+                        ? "Video is working and microphone access is granted."
+                        : "Microphone access is also required to play.");
             }
             finally
             {
@@ -383,7 +383,7 @@ namespace Kodimodi.UI
 
             RefreshEntryUI();
         }
-        
+
         // ---------- Экраны ----------
 
         private void RefreshEntryUI()

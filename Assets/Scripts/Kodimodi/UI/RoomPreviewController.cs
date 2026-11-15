@@ -43,7 +43,7 @@ namespace Kodimodi.UI
         {
             consentController = FindAnyObjectByType<ConsentPopupController>(
                 FindObjectsInactive.Include);
-            
+
             lobby = GetComponent<LobbyClient>();
 
             profile = FindAnyObjectByType<ProfileController>();
@@ -69,8 +69,8 @@ namespace Kodimodi.UI
             if (string.IsNullOrWhiteSpace(code))
             {
                 ErrorPopup.Show(
-                    "В ссылке отсутствует код комнаты.",
-                    "Не удалось открыть матч");
+                    "The link is missing a room code.",
+                    "Could not open the match");
 
                 return;
             }
@@ -126,8 +126,8 @@ namespace Kodimodi.UI
                             if (request.responseCode == 404)
                             {
                                 lobby.SetPreviewError(
-                                    "Комната не найдена или больше " +
-                                    "не существует. Проверь ссылку.");
+                                    "The room was not found or no longer " +
+                                    "exists. Check the link.");
 
                                 continuePolling = false;
                             }
@@ -136,24 +136,24 @@ namespace Kodimodi.UI
                                 request.responseCode == 403)
                             {
                                 lobby.SetPreviewError(
-                                    "Нет доступа к этой комнате.");
+                                    "You do not have access to this room.");
 
                                 continuePolling = false;
                             }
                             else if (request.responseCode == 400)
                             {
                                 lobby.SetPreviewError(
-                                    "Сервер отклонил запрос комнаты. " +
-                                    "Проверь ссылку на матч.");
+                                    "The server rejected the room request. " +
+                                    "Check the match link.");
 
                                 continuePolling = false;
                             }
                             else
                             {
                                 lobby.SetPreviewError(
-                                    "Не удалось получить данные комнаты.\n\n" +
-                                    "Проверь подключение к интернету. " +
-                                    "Повторяем запрос автоматически.");
+                                    "Could not load room data.\n\n" +
+                                    "Check your internet connection. " +
+                                    "Retrying automatically.");
                             }
                         }
                         else
@@ -225,8 +225,8 @@ namespace Kodimodi.UI
                 canJoin = false;
 
                 lobby.SetPreviewError(
-                    "Матч уже начался. " +
-                    "Подключиться к нему больше нельзя.");
+                    "The match has already started. " +
+                    "You can no longer join it.");
 
                 return false;
             }
@@ -236,8 +236,8 @@ namespace Kodimodi.UI
                 canJoin = false;
 
                 lobby.SetPreviewError(
-                    "Комната закрыта. " +
-                    "Попроси создателя прислать новую ссылку.");
+                    "The room is closed. " +
+                    "Ask the host to send a new link.");
 
                 return false;
             }
@@ -251,8 +251,8 @@ namespace Kodimodi.UI
             canJoin = data.canJoin;
 
             string status = canJoin
-                ? "Нажми «Подключиться», чтобы войти."
-                : "Подключение к комнате пока недоступно.";
+                ? "Click ‘Join’ to enter."
+                : "Joining this room is currently unavailable.";
 
             lobby.ApplyPreview(
                 data.players.Length,
@@ -268,15 +268,15 @@ namespace Kodimodi.UI
             canJoin = false;
 
             lobby.SetPreviewError(
-                "Сервер вернул некорректные данные комнаты.\n\n" +
-                "Повторяем запрос автоматически.");
+                "The server returned invalid room data.\n\n" +
+                "Retrying automatically.");
         }
 
         public void OnJoinClick()
         {
             if (!IsPreviewing || !canJoin)
                 return;
-            
+
             if (profile == null)
                 profile = FindAnyObjectByType<ProfileController>();
 
@@ -288,9 +288,9 @@ namespace Kodimodi.UI
                     this);
 
                 ErrorPopup.Show(
-                    "Не удалось подготовить вход в матч. " +
-                    "Попробуй обновить страницу.",
-                    "Не удалось подключиться");
+                    "Could not prepare to join the match. " +
+                    "Try refreshing the page.",
+                    "Could not connect");
 
                 return;
             }
