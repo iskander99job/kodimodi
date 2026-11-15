@@ -425,7 +425,7 @@ namespace Kodimodi.UI
                 ready &&
                 !mediaAccess.RequestPending)
             {
-                OpenCreateMatch();
+                //OpenCreateMatch();
             }
 
             bool showDevices = !ready && devicesRequested;
