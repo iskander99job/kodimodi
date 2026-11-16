@@ -24234,6 +24234,7 @@ GameObject:
   - component: {fileID: 756364570}
   - component: {fileID: 756364573}
   - component: {fileID: 756364572}
+  - component: {fileID: 756364574}
   m_Layer: 5
   m_Name: CreateAccountPopup
   m_TagString: Untagged
@@ -24326,6 +24327,18 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &756364574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 756364569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a948071697a4825a9450047cb9f374d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.SignUp
 --- !u!1 &757240576
 GameObject:
   m_ObjectHideFlags: 0
@@ -49358,6 +49371,7 @@ GameObject:
   - component: {fileID: 1510470994}
   - component: {fileID: 1510470996}
   - component: {fileID: 1510470995}
+  - component: {fileID: 1510470997}
   m_Layer: 5
   m_Name: SignInPopup
   m_TagString: Untagged
@@ -49450,6 +49464,18 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &1510470997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510470993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c29fd8b0fa4e4e229639b95e7890a279, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.SignIn
 --- !u!1 &1516478378
 GameObject:
   m_ObjectHideFlags: 0
@@ -55747,6 +55773,7 @@ GameObject:
   - component: {fileID: 1717723533}
   - component: {fileID: 1717723535}
   - component: {fileID: 1717723534}
+  - component: {fileID: 1717723536}
   m_Layer: 5
   m_Name: ArsenalUI
   m_TagString: Untagged
@@ -55817,6 +55844,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1717723532}
   m_CullTransparentMesh: 1
+--- !u!114 &1717723536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1717723532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d976a458b54f43f39f12db56d79502c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.Arsenal
 --- !u!1 &1727626567
 GameObject:
   m_ObjectHideFlags: 0
@@ -62586,6 +62625,7 @@ GameObject:
   - component: {fileID: 1895302618}
   - component: {fileID: 1895302620}
   - component: {fileID: 1895302619}
+  - component: {fileID: 1895302621}
   m_Layer: 5
   m_Name: WeaponShopUI
   m_TagString: Untagged
@@ -62656,6 +62696,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1895302617}
   m_CullTransparentMesh: 1
+--- !u!114 &1895302621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1895302617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2fbcfba40e742e08820fc537304c497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.WeaponShop
 --- !u!1 &1896858131
 GameObject:
   m_ObjectHideFlags: 0
@@ -66120,6 +66172,7 @@ GameObject:
   - component: {fileID: 1988186273}
   - component: {fileID: 1988186275}
   - component: {fileID: 1988186274}
+  - component: {fileID: 1988186276}
   m_Layer: 5
   m_Name: CoinShopPage
   m_TagString: Untagged
@@ -66189,6 +66242,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1988186272}
   m_CullTransparentMesh: 1
+--- !u!114 &1988186276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1988186272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9ccbb4d28394143899a42ac035c0653, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.CoinShop
 --- !u!1 &1993661682
 GameObject:
   m_ObjectHideFlags: 0
@@ -67678,6 +67743,7 @@ GameObject:
   - component: {fileID: 2049389293}
   - component: {fileID: 2049389296}
   - component: {fileID: 2049389295}
+  - component: {fileID: 2049389297}
   m_Layer: 5
   m_Name: Settings
   m_TagString: Untagged
@@ -67770,6 +67836,18 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &2049389297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049389292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e204274b90a4d548a425206521d0c75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.Settings
 --- !u!1 &2057844450
 GameObject:
   m_ObjectHideFlags: 0
