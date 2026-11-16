@@ -54912,7 +54912,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.LobbyClient
   nickname: Player
   editorTestUrl: 
-  matchSceneName: LevelTst
+  matchSceneName: BattleScene
 --- !u!4 &1695145619
 Transform:
   m_ObjectHideFlags: 0
