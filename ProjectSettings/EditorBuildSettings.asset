@@ -11,9 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/BattleScene.unity
     guid: a3f29f1950f6e5945a274cf7349d68b2
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/LightTestScene.unity
     guid: 637fd9aec6e1247c68398eefc16414d2
+  - enabled: 1
+    path: Assets/Scenes/PlaygroundTestScene.unity
+    guid: 287013215eb1d4e99bad3a958169f1a2
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: fe0ad163545f89b47813a7b41af4a66a,
       type: 3}
