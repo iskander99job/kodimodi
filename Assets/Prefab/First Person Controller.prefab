@@ -1749,7 +1749,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startItems:
-  - {fileID: 1069960484613499420, guid: b59bdbe3ae563544c9c624ef3653f87f, type: 3}
+  - {fileID: 1381449020877307722, guid: 24e009a93b9c74fd7be1cac503bafae4, type: 3}
   items: []
   collectables:
   - m_count: 200
