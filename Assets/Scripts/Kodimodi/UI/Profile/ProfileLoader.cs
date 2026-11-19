@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -9,6 +11,10 @@ namespace Kodimodi.UI.Profile
 {
     public sealed class ProfileLoader : MonoBehaviour
     {
+        private readonly HashSet<string> ownedWeapons =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        private Transform canvas;
         private GameObject profileSpinner;
         private GameObject[] profileObjects;
         private CanvasGroup playCanvasGroup;
@@ -17,7 +23,14 @@ namespace Kodimodi.UI.Profile
         private GameObject exitButton;
         private GameObject balancePanel;
         private TMP_Text balanceText;
+        private string sessionApiBaseUrl;
+        private string sessionAccessToken;
         private bool isLoading;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")]
+        private static extern int Kodimodi_ClearAccessToken();
+#endif
 
         [Serializable]
         private sealed class ProfileResponse
@@ -38,7 +51,7 @@ namespace Kodimodi.UI.Profile
                     "ProfileLoader: MainCanvas was not found.");
             }
 
-            var canvas = mainCanvas.transform;
+            canvas = mainCanvas.transform;
 
             profileSpinner = FindRequired<Transform>(canvas, "ProfileSpinner").gameObject;
             profileRank = FindRequired<ProfileRankController>(canvas, "ProfileRank");
@@ -63,6 +76,7 @@ namespace Kodimodi.UI.Profile
             };
 
             profileSpinner.SetActive(false);
+            SetCoins(0);
             SetSignedIn(false);
         }
 
@@ -72,7 +86,7 @@ namespace Kodimodi.UI.Profile
             if (!isLoading &&
                 EditorAuthSession.TryRead(out var apiBaseUrl, out var accessToken))
             {
-                StartCoroutine(LoadProfile(apiBaseUrl + "/profile", accessToken));
+                StartCoroutine(LoadProfile(apiBaseUrl, accessToken));
             }
         }
 #endif
@@ -86,7 +100,54 @@ namespace Kodimodi.UI.Profile
             EditorAuthSession.Save(apiBaseUrl, accessToken);
 #endif
 
-            StartCoroutine(LoadProfile(apiBaseUrl + "/profile", accessToken));
+            StartCoroutine(LoadProfile(apiBaseUrl, accessToken));
+        }
+
+        public bool TryGetSession(out string apiBaseUrl, out string accessToken)
+        {
+            apiBaseUrl = sessionApiBaseUrl;
+            accessToken = sessionAccessToken;
+            return !isLoading && !string.IsNullOrEmpty(accessToken);
+        }
+
+        public string GetAccessToken(string apiBaseUrl)
+        {
+            return string.Equals(sessionApiBaseUrl, apiBaseUrl, StringComparison.Ordinal)
+                ? sessionAccessToken
+                : null;
+        }
+
+        public bool OwnsWeapon(string code)
+        {
+            return ownedWeapons.Contains(code);
+        }
+
+        public void RememberOwnedWeapon(string code)
+        {
+            ownedWeapons.Add(code);
+        }
+
+        internal void SyncOwnedWeapons(ArsenalWeapon[] weapons)
+        {
+            ownedWeapons.Clear();
+
+            foreach (var weapon in weapons)
+            {
+                if (weapon != null && !string.IsNullOrWhiteSpace(weapon.code))
+                    ownedWeapons.Add(weapon.code);
+            }
+        }
+
+        public void SetCoins(int coins)
+        {
+            string amount = coins
+                .ToString("N0", CultureInfo.InvariantCulture)
+                .Replace(',', ' ');
+
+            balanceText.text = amount;
+            SetScreenBalance("WeaponShopUI", amount);
+            SetScreenBalance("WeaponDetailsUI", amount);
+            SetScreenBalance("ArsenalUI", amount);
         }
 
         public void ResetProfile()
@@ -95,21 +156,32 @@ namespace Kodimodi.UI.Profile
             EditorAuthSession.Clear();
 #endif
 
+            sessionApiBaseUrl = null;
+            sessionAccessToken = null;
+            ownedWeapons.Clear();
+
             profileRank.SetNickname("Guest");
             profileRank.SetXP(0);
-            balanceText.text = "0";
-
+            SetCoins(0);
             SetSignedIn(false);
         }
 
-        private IEnumerator LoadProfile(string url, string accessToken)
+        public void ClearRejectedSession()
         {
-            using var request = UnityWebRequest.Get(url);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            Kodimodi_ClearAccessToken();
+#endif
+
+            ResetProfile();
+        }
+
+        private IEnumerator LoadProfile(string apiBaseUrl, string accessToken)
+        {
+            using var request = UnityWebRequest.Get(apiBaseUrl + "/profile");
             request.SetRequestHeader("Authorization", "Bearer " + accessToken);
             request.timeout = 15;
 
             var wasActive = new bool[profileObjects.Length];
-
             float playAlpha = playCanvasGroup.alpha;
             bool playInteractable = playCanvasGroup.interactable;
             bool playBlocksRaycasts = playCanvasGroup.blocksRaycasts;
@@ -125,12 +197,51 @@ namespace Kodimodi.UI.Profile
             playCanvasGroup.alpha = 0f;
             playCanvasGroup.interactable = false;
             playCanvasGroup.blocksRaycasts = false;
-
             profileSpinner.SetActive(true);
 
             try
             {
                 yield return request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success ||
+                    request.responseCode != 200)
+                {
+                    if (request.responseCode == 401)
+                        ClearRejectedSession();
+
+                    string message = request.responseCode switch
+                    {
+                        401 => "Please sign in again.",
+                        404 => "Profile not found.",
+                        _ => "Couldn't load your profile. Please try again."
+                    };
+
+                    ErrorPopup.Show(message, "Profile Error");
+                    yield break;
+                }
+
+                var profile = ReadProfile(request.downloadHandler.text);
+
+                if (profile == null || profile.id <= 0 ||
+                    string.IsNullOrWhiteSpace(profile.nickname))
+                {
+                    ErrorPopup.Show(
+                        "The server returned an invalid profile.", "Profile Error");
+                    yield break;
+                }
+
+                if (sessionAccessToken != accessToken || sessionApiBaseUrl != apiBaseUrl)
+                    ownedWeapons.Clear();
+
+                sessionApiBaseUrl = apiBaseUrl;
+                sessionAccessToken = accessToken;
+
+                profileRank.SetNickname(profile.nickname);
+                profileRank.SetXP(profile.xp);
+                SetCoins(profile.coins);
+                SetSignedIn(true);
+
+                yield return LoadOwnedWeapons(apiBaseUrl, accessToken);
             }
             finally
             {
@@ -145,40 +256,38 @@ namespace Kodimodi.UI.Profile
 
                 isLoading = false;
             }
+        }
 
-            if (request.result != UnityWebRequest.Result.Success ||
-                request.responseCode != 200)
+        private IEnumerator LoadOwnedWeapons(string apiBaseUrl, string token)
+        {
+            using var request = ArsenalApi.CreateRequest(apiBaseUrl, token);
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 401)
             {
-#if UNITY_EDITOR
-                if (request.responseCode == 401)
-                    ResetProfile();
-#endif
-
-                string message = request.responseCode switch
-                {
-                    401 => "Please sign in again.",
-                    404 => "Profile not found.",
-                    _ => "Couldn't load your profile. Please try again."
-                };
-
-                ErrorPopup.Show(message, "Profile Error");
+                ClearRejectedSession();
+                ErrorPopup.Show(ArsenalApi.SignInRequired, "Arsenal Error");
                 yield break;
             }
 
-            var profile = ReadProfile(request.downloadHandler.text);
+            var arsenal = ArsenalApi.ReadResponse(request);
 
-            if (profile == null || profile.id <= 0 ||
-                string.IsNullOrWhiteSpace(profile.nickname))
+            if (arsenal?.weapons == null)
             {
-                ErrorPopup.Show("The server returned an invalid profile.", "Profile Error");
+                ErrorPopup.Show(ArsenalApi.LoadFailed, "Arsenal Error");
                 yield break;
             }
 
-            profileRank.SetNickname(profile.nickname);
-            profileRank.SetXP(profile.xp);
-            balanceText.text = profile.coins.ToString(CultureInfo.InvariantCulture);
+            SyncOwnedWeapons(arsenal.weapons);
+        }
 
-            SetSignedIn(true);
+        private void SetScreenBalance(string screen, string amount)
+        {
+            var target = canvas.Find(screen + "/Header/BalancePanel/BalanceText");
+
+            if (target != null && target.TryGetComponent<TMP_Text>(out var text))
+                text.text = amount;
         }
 
         private void SetSignedIn(bool signedIn)
