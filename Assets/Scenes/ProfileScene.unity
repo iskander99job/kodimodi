@@ -350,134 +350,165 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.ProfileRankController
   language: 0
   nickname: nickname
-  playerXP: 6666
+  playerXP: 5555
   ranks:
-  - russianName: "\u041D\u043E\u0432\u043E\u0431\u0440\u0430\u043D\u0435\u0446"
-    englishName: Recruit
-    requiredXP: 0
-    icon: {fileID: 1253014581, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
   - russianName: "\u0420\u044F\u0434\u043E\u0432\u043E\u0439"
     englishName: Private
-    requiredXP: 100
-    icon: {fileID: 63513583, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 0
+    icon: {fileID: -102479012, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -16.26
   - russianName: "\u0415\u0444\u0440\u0435\u0439\u0442\u043E\u0440"
-    englishName: Lance Corporal
-    requiredXP: 250
-    icon: {fileID: -243365073, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u041A\u0430\u043F\u0440\u0430\u043B"
     englishName: Corporal
-    requiredXP: 450
-    icon: {fileID: 1949789845, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 100
+    icon: {fileID: -913551658, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -9.4
+  - russianName: "\u041C\u043B\u0430\u0434\u0448\u0438\u0439 \u0441\u0435\u0440\u0436\u0430\u043D\u0442"
+    englishName: Junior Sergeant
+    requiredXP: 250
+    icon: {fileID: -1304603239, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 14.46
+    iconY: 9.95
   - russianName: "\u0421\u0435\u0440\u0436\u0430\u043D\u0442"
     englishName: Sergeant
-    requiredXP: 700
-    icon: {fileID: 386125580, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 450
+    icon: {fileID: 1837258727, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 100
+    iconHeight: 100
+    iconX: 15.81
+    iconY: -7.8
   - russianName: "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u0441\u0435\u0440\u0436\u0430\u043D\u0442"
-    englishName: Staff Sergeant
-    requiredXP: 1000
-    icon: {fileID: -634905412, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0421\u0435\u0440\u0436\u0430\u043D\u0442 \u043F\u0435\u0440\u0432\u043E\u0433\u043E
-      \u043A\u043B\u0430\u0441\u0441\u0430"
-    englishName: Sergeant First Class
-    requiredXP: 1400
-    icon: {fileID: -331426726, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u041C\u0430\u0441\u0442\u0435\u0440-\u0441\u0435\u0440\u0436\u0430\u043D\u0442"
-    englishName: Master Sergeant
-    requiredXP: 1900
-    icon: {fileID: -158354870, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u041F\u0435\u0440\u0432\u044B\u0439 \u0441\u0435\u0440\u0436\u0430\u043D\u0442"
-    englishName: First Sergeant
-    requiredXP: 2500
-    icon: {fileID: 1568494131, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0421\u0435\u0440\u0436\u0430\u043D\u0442-\u043C\u0430\u0439\u043E\u0440"
+    englishName: Senior Sergeant
+    requiredXP: 700
+    icon: {fileID: 720489823, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 46.4
+    iconY: 0
+  - russianName: "\u0421\u0442\u0430\u0440\u0448\u0438\u043D\u0430"
     englishName: Sergeant Major
-    requiredXP: 3200
-    icon: {fileID: 831787179, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 1000
+    icon: {fileID: -1312037408, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -9.7
+  - russianName: "\u041F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A"
+    englishName: Warrant Officer
+    requiredXP: 1400
+    icon: {fileID: -1948402961, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 7.43
+    iconY: -1.98
+  - russianName: "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u043F\u0440\u0430\u043F\u043E\u0440\u0449\u0438\u043A"
+    englishName: Senior Warrant Officer
+    requiredXP: 1900
+    icon: {fileID: 1337091521, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: 0
   - russianName: "\u041C\u043B\u0430\u0434\u0448\u0438\u0439 \u043B\u0435\u0439\u0442\u0435\u043D\u0430\u043D\u0442"
-    englishName: Second Lieutenant
-    requiredXP: 4000
-    icon: {fileID: 1038935884, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    englishName: Junior Lieutenant
+    requiredXP: 2500
+    icon: {fileID: -293952666, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 32.3
+    iconY: 1
   - russianName: "\u041B\u0435\u0439\u0442\u0435\u043D\u0430\u043D\u0442"
-    englishName: First Lieutenant
-    requiredXP: 5000
-    icon: {fileID: 696201189, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    englishName: Lieutenant
+    requiredXP: 3200
+    icon: {fileID: 436926331, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -6.9
+  - russianName: "\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u043B\u0435\u0439\u0442\u0435\u043D\u0430\u043D\u0442"
+    englishName: Senior Lieutenant
+    requiredXP: 4000
+    icon: {fileID: -86566163, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: 0
   - russianName: "\u041A\u0430\u043F\u0438\u0442\u0430\u043D"
     englishName: Captain
-    requiredXP: 6200
-    icon: {fileID: -765920342, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 5000
+    icon: {fileID: -299941577, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: 0
   - russianName: "\u041C\u0430\u0439\u043E\u0440"
     englishName: Major
-    requiredXP: 7600
-    icon: {fileID: -843710121, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 6200
+    icon: {fileID: 1455404294, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 32.3
+    iconY: 0
   - russianName: "\u041F\u043E\u0434\u043F\u043E\u043B\u043A\u043E\u0432\u043D\u0438\u043A"
     englishName: Lieutenant Colonel
-    requiredXP: 9200
-    icon: {fileID: 1126493520, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 7600
+    icon: {fileID: -1772668217, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -3.6
   - russianName: "\u041F\u043E\u043B\u043A\u043E\u0432\u043D\u0438\u043A"
     englishName: Colonel
-    requiredXP: 11000
-    icon: {fileID: -873522614, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0411\u0440\u0438\u0433\u0430\u0434\u043D\u044B\u0439 \u0433\u0435\u043D\u0435\u0440\u0430\u043B"
-    englishName: Brigadier General
-    requiredXP: 13500
-    icon: {fileID: 110966329, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 9200
+    icon: {fileID: -53559025, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: 0
   - russianName: "\u0413\u0435\u043D\u0435\u0440\u0430\u043B-\u043C\u0430\u0439\u043E\u0440"
     englishName: Major General
-    requiredXP: 16500
-    icon: {fileID: -1504529411, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    requiredXP: 11000
+    icon: {fileID: -729892819, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: 0
   - russianName: "\u0413\u0435\u043D\u0435\u0440\u0430\u043B-\u043B\u0435\u0439\u0442\u0435\u043D\u0430\u043D\u0442"
     englishName: Lieutenant General
+    requiredXP: 13500
+    icon: {fileID: -1753350598, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -8.49
+  - russianName: "\u0410\u0441"
+    englishName: Ace
+    requiredXP: 16500
+    icon: {fileID: -47599564, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -15.65
+  - russianName: "\u0411\u043E\u0433"
+    englishName: God
     requiredXP: 20000
-    icon: {fileID: 1499283954, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0413\u0435\u043D\u0435\u0440\u0430\u043B"
-    englishName: General
-    requiredXP: 24000
-    icon: {fileID: 1440513584, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u041C\u0430\u0440\u0448\u0430\u043B"
-    englishName: Marshal
-    requiredXP: 29000
-    icon: {fileID: -358136450, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0412\u0435\u0442\u0435\u0440\u0430\u043D"
-    englishName: Veteran
-    requiredXP: 35000
-    icon: {fileID: 564881634, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u042D\u043B\u0438\u0442\u0430"
-    englishName: Elite
-    requiredXP: 42000
-    icon: {fileID: -565106417, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u041C\u0430\u0441\u0442\u0435\u0440"
-    englishName: Master
-    requiredXP: 50000
-    icon: {fileID: 453570102, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0413\u0440\u0430\u043D\u0434\u043C\u0430\u0441\u0442\u0435\u0440"
-    englishName: Grandmaster
-    requiredXP: 60000
-    icon: {fileID: -1995398987, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0427\u0435\u043C\u043F\u0438\u043E\u043D"
-    englishName: Champion
-    requiredXP: 72000
-    icon: {fileID: -1995398987, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0413\u0435\u0440\u043E\u0439"
-    englishName: Hero
-    requiredXP: 86000
-    icon: {fileID: 429805848, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0422\u0438\u0442\u0430\u043D"
-    englishName: Titan
-    requiredXP: 102000
-    icon: {fileID: -1381023977, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u041B\u0435\u0433\u0435\u043D\u0434\u0430"
-    englishName: Legend
-    requiredXP: 120000
-    icon: {fileID: -529492198, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
-  - russianName: "\u0411\u0435\u0441\u0441\u043C\u0435\u0440\u0442\u043D\u044B\u0439"
-    englishName: Immortal
-    requiredXP: 150000
-    icon: {fileID: 0}
-  rankIcon: {fileID: 0}
-  nicknameText: {fileID: 0}
-  rankNameText: {fileID: 0}
-  xpText: {fileID: 0}
-  xpBar: {fileID: 0}
+    icon: {fileID: 75451139, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+    iconWidth: 0
+    iconHeight: 0
+    iconX: 0
+    iconY: -5.88
+  rankIcon: {fileID: 620042466}
+  nicknameText: {fileID: 1580157247}
+  rankNameText: {fileID: 485479011}
+  xpText: {fileID: 320725064}
+  xpBar: {fileID: 108770904}
 --- !u!1 &12449556
 GameObject:
   m_ObjectHideFlags: 0
@@ -4072,9 +4103,9 @@ MonoBehaviour:
   m_HandleRect: {fileID: 0}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 1000
+  m_MaxValue: 1400
   m_WholeNumbers: 1
-  m_Value: 350
+  m_Value: 466
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -10417,7 +10448,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 350 / 1 000 XP
+  m_text: 466 / 1 400 XP
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -16178,7 +16209,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Legenda
+  m_text: "\u041C\u0430\u0439\u043E\u0440"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -20322,7 +20353,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -20.3}
   m_SizeDelta: {x: 120, y: 120}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &620042466
@@ -20345,7 +20376,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -565106417, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  m_Sprite: {fileID: -102479012, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1

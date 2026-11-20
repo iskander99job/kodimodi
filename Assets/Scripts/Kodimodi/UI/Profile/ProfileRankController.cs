@@ -14,6 +14,9 @@ namespace Kodimodi.UI.Profile
             English
         }
 
+        private const float DefaultIconSize = 120f;
+        private const int LegacyRankCount = 30;
+
         [Serializable]
         public class Rank
         {
@@ -24,6 +27,15 @@ namespace Kodimodi.UI.Profile
             public int requiredXP;
 
             public Sprite icon;
+
+            [Min(1)]
+            public float iconWidth = DefaultIconSize;
+
+            [Min(1)]
+            public float iconHeight = DefaultIconSize;
+
+            public float iconX = 0f;
+            public float iconY = 0f;
 
             public Rank(string russian, string english, int xp)
             {
@@ -65,41 +77,25 @@ namespace Kodimodi.UI.Profile
         {
             return new List<Rank>
             {
-                new Rank("Новобранец", "Recruit", 0),
-                new Rank("Рядовой", "Private", 100),
-                new Rank("Ефрейтор", "Lance Corporal", 250),
-                new Rank("Капрал", "Corporal", 450),
-                new Rank("Сержант", "Sergeant", 700),
-
-                new Rank("Старший сержант", "Staff Sergeant", 1000),
-                new Rank("Сержант первого класса", "Sergeant First Class", 1400),
-                new Rank("Мастер-сержант", "Master Sergeant", 1900),
-                new Rank("Первый сержант", "First Sergeant", 2500),
-                new Rank("Сержант-майор", "Sergeant Major", 3200),
-
-                new Rank("Младший лейтенант", "Second Lieutenant", 4000),
-                new Rank("Лейтенант", "First Lieutenant", 5000),
-                new Rank("Капитан", "Captain", 6200),
-                new Rank("Майор", "Major", 7600),
-                new Rank("Подполковник", "Lieutenant Colonel", 9200),
-
-                new Rank("Полковник", "Colonel", 11000),
-                new Rank("Бригадный генерал", "Brigadier General", 13500),
-                new Rank("Генерал-майор", "Major General", 16500),
-                new Rank("Генерал-лейтенант", "Lieutenant General", 20000),
-                new Rank("Генерал", "General", 24000),
-
-                new Rank("Маршал", "Marshal", 29000),
-                new Rank("Ветеран", "Veteran", 35000),
-                new Rank("Элита", "Elite", 42000),
-                new Rank("Мастер", "Master", 50000),
-                new Rank("Грандмастер", "Grandmaster", 60000),
-
-                new Rank("Чемпион", "Champion", 72000),
-                new Rank("Герой", "Hero", 86000),
-                new Rank("Титан", "Titan", 102000),
-                new Rank("Легенда", "Legend", 120000),
-                new Rank("Бессмертный", "Immortal", 150000)
+                new Rank("Рядовой", "Private", 0),
+                new Rank("Ефрейтор", "Corporal", 100),
+                new Rank("Младший сержант", "Junior Sergeant", 250),
+                new Rank("Сержант", "Sergeant", 450),
+                new Rank("Старший сержант", "Senior Sergeant", 700),
+                new Rank("Старшина", "Sergeant Major", 1000),
+                new Rank("Прапорщик", "Warrant Officer", 1400),
+                new Rank("Старший прапорщик", "Senior Warrant Officer", 1900),
+                new Rank("Младший лейтенант", "Junior Lieutenant", 2500),
+                new Rank("Лейтенант", "Lieutenant", 3200),
+                new Rank("Старший лейтенант", "Senior Lieutenant", 4000),
+                new Rank("Капитан", "Captain", 5000),
+                new Rank("Майор", "Major", 6200),
+                new Rank("Подполковник", "Lieutenant Colonel", 7600),
+                new Rank("Полковник", "Colonel", 9200),
+                new Rank("Генерал-майор", "Major General", 11000),
+                new Rank("Генерал-лейтенант", "Lieutenant General", 13500),
+                new Rank("Ас", "Ace", 16500),
+                new Rank("Бог", "God", 20000)
             };
         }
 
@@ -133,7 +129,6 @@ namespace Kodimodi.UI.Profile
             RefreshUI();
         }
 
-        // Можно подключить к кнопкам через On Click().
         public void UseRussian()
         {
             SetLanguage(Language.Russian);
@@ -232,6 +227,15 @@ namespace Kodimodi.UI.Profile
             {
                 rankIcon.sprite = current.icon;
                 rankIcon.enabled = current.icon != null;
+
+                RectTransform iconRect = rankIcon.rectTransform;
+                iconRect.SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Horizontal,
+                    current.iconWidth > 0f ? current.iconWidth : DefaultIconSize);
+                iconRect.SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Vertical,
+                    current.iconHeight > 0f ? current.iconHeight : DefaultIconSize);
+                iconRect.anchoredPosition = new Vector2(current.iconX, current.iconY);
             }
 
             if (next == null)
@@ -258,8 +262,7 @@ namespace Kodimodi.UI.Profile
 
             if (xpText != null)
             {
-                xpText.text =
-                    $"{FormatXP(earned)} / {FormatXP(needed)} XP";
+                xpText.text = $"{FormatXP(playerXP)} / {FormatXP(next.requiredXP)} XP";
             }
         }
 
@@ -288,19 +291,28 @@ namespace Kodimodi.UI.Profile
             ).Replace(",", " ");
         }
 
-        // Обновляет названия старого списка, сохраняя иконки и XP.
+        // Переносит первые 19 записей старого списка с их иконками и XP.
         [ContextMenu("Apply Bilingual Rank Names")]
         private void ApplyBilingualRankNames()
         {
             List<Rank> defaults = CreateDefaultRanks();
 
-            if (ranks == null || ranks.Count != defaults.Count)
+            if (ranks == null ||
+                (ranks.Count != defaults.Count && ranks.Count != LegacyRankCount))
             {
                 Debug.LogWarning(
-                    "Для обновления названий в списке должно быть 30 рангов.",
+                    $"Для обновления нужен список из {defaults.Count} рангов " +
+                    $"или старый список из {LegacyRankCount} рангов.",
                     this);
                 return;
             }
+
+#if UNITY_EDITOR
+            UnityEditor.Undo.RecordObject(this, "Apply Bilingual Rank Names");
+#endif
+
+            if (ranks.Count > defaults.Count)
+                ranks.RemoveRange(defaults.Count, ranks.Count - defaults.Count);
 
             for (int i = 0; i < ranks.Count; i++)
             {
@@ -316,6 +328,7 @@ namespace Kodimodi.UI.Profile
             RefreshUI();
 
 #if UNITY_EDITOR
+            UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
             UnityEditor.EditorUtility.SetDirty(this);
 
             if (!Application.isPlaying && gameObject.scene.IsValid())
