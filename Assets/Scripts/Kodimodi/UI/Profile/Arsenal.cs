@@ -11,6 +11,9 @@ namespace Kodimodi.UI.Profile
 {
     public class Arsenal : MonoBehaviour
     {
+        [SerializeField] private RectTransform weaponCardPrefab;
+        [SerializeField] private WeaponIcon[] weaponIcons = Array.Empty<WeaponIcon>();
+
         private static readonly (string Tab, string Code)[] Categories =
         {
             ("AR_Tab", "AR"),
@@ -22,47 +25,43 @@ namespace Kodimodi.UI.Profile
             ("GL_Tab", "GL")
         };
 
-        private readonly List<GameObject> rows = new List<GameObject>();
+        private readonly List<GameObject> cards = new List<GameObject>();
         private readonly List<LeanButton> equipButtons = new List<LeanButton>();
         private readonly Dictionary<string, Sprite> icons =
-            new Dictionary<string, Sprite>(StringComparer.Ordinal);
+            new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
 
         private ScrollRect scrollView;
-        private RectTransform rowTemplate;
-        private RectTransform cardTemplate;
         private TMP_Text sectionTitle;
         private TMP_Text modelCount;
         private LeanButton backButton;
         private ProfileLoader profileLoader;
         private ArsenalWeapon[] weapons = Array.Empty<ArsenalWeapon>();
 
-        private int cardsPerRow;
         private int selectedCategory;
         private bool isLoading;
         private bool isEquipping;
         private Coroutine requestRoutine;
         private UnityWebRequest activeRequest;
 
+        [Serializable]
+        private struct WeaponIcon
+        {
+            public string code;
+            public Sprite sprite;
+        }
+
         private void Awake()
         {
             scrollView = FindRequired<ScrollRect>(transform, "WeaponsScrollView");
-            rowTemplate = FindRequired<RectTransform>(scrollView.content, "Row_1");
-            cardTemplate = FindRequired<RectTransform>(rowTemplate, "Weapon_1_M4A1");
             sectionTitle = FindRequired<TMP_Text>(transform, "SectionHeading/SectionTitle");
             modelCount = FindRequired<TMP_Text>(transform, "SectionHeading/ModelCount");
             backButton = FindRequired<LeanButton>(transform, "Header/BackButton");
 
-            icons["M4A1"] = FindRequired<Image>(cardTemplate, "Weapon_Icon").sprite;
-
-            var scarIcon = transform.parent.Find(
-                "WeaponShopUI/WeaponsScrollView/Viewport/Content/Row_1/" +
-                "Weapon_4_SCAR-L/Weapon_Icon");
-
-            if (scarIcon != null && scarIcon.TryGetComponent<Image>(out var image))
-                icons["SCAR_L"] = image.sprite;
-
-            cardsPerRow = Mathf.Max(1, rowTemplate.childCount);
-            rowTemplate.gameObject.SetActive(false);
+            foreach (var entry in weaponIcons)
+            {
+                if (!string.IsNullOrWhiteSpace(entry.code) && entry.sprite != null)
+                    icons[entry.code.Trim()] = entry.sprite;
+            }
 
             var tabs = FindRequired<Transform>(transform, "Categories_Fixed");
 
@@ -94,17 +93,17 @@ namespace Kodimodi.UI.Profile
 
             profileLoader = FindAnyObjectByType<ProfileLoader>();
 
-            if (profileLoader == null ||
-                !profileLoader.TryGetSession(out var apiBaseUrl, out var token))
-            {
-                ErrorPopup.Show(ArsenalApi.SignInRequired, "Arsenal");
-                return;
-            }
-
             transform.SetAsLastSibling();
             gameObject.SetActive(true);
 
-            LoadArsenal(apiBaseUrl, token);
+            if (profileLoader != null &&
+                profileLoader.TryGetSession(out var apiBaseUrl, out var token))
+            {
+                LoadArsenal(apiBaseUrl, token);
+                return;
+            }
+
+            ShowGuestArsenal();
         }
 
         public void Close()
@@ -122,11 +121,32 @@ namespace Kodimodi.UI.Profile
                 SetEquipping(false);
         }
 
+        private void ShowGuestArsenal()
+        {
+            CancelRequest();
+            isLoading = false;
+            weapons = Array.Empty<ArsenalWeapon>();
+            SetEquipping(false);
+            RenderSelectedCategory();
+        }
+
         private void LoadArsenal(string apiBaseUrl, string token)
         {
             CancelRequest();
-
             weapons = Array.Empty<ArsenalWeapon>();
+
+            if (weaponCardPrefab == null || scrollView.content == null)
+            {
+                isLoading = false;
+                RenderSelectedCategory();
+
+                ErrorPopup.Show(
+                    "The arsenal card prefab or scroll content is missing.",
+                    "Arsenal Error");
+
+                return;
+            }
+
             isLoading = true;
             RenderSelectedCategory();
 
@@ -169,7 +189,8 @@ namespace Kodimodi.UI.Profile
             if (profileLoader == null ||
                 !profileLoader.TryGetSession(out var apiBaseUrl, out var token))
             {
-                ErrorPopup.Show(ArsenalApi.SignInRequired, "Arsenal");
+                ShowGuestArsenal();
+                ErrorPopup.Show("Sign in to equip this weapon.", "Arsenal");
                 return;
             }
 
@@ -228,7 +249,7 @@ namespace Kodimodi.UI.Profile
             if (profileLoader == null ||
                 profileLoader.GetAccessToken(apiBaseUrl) != token)
             {
-                Close();
+                ShowGuestArsenal();
                 return false;
             }
 
@@ -236,8 +257,8 @@ namespace Kodimodi.UI.Profile
                 return true;
 
             profileLoader.ClearRejectedSession();
-            Close();
-            ErrorPopup.Show(ArsenalApi.SignInRequired, "Arsenal");
+            ShowGuestArsenal();
+            ErrorPopup.Show("Please sign in again.", "Arsenal");
             return false;
         }
 
@@ -252,9 +273,10 @@ namespace Kodimodi.UI.Profile
 
         private void RenderSelectedCategory(bool resetScroll = true)
         {
-            float scrollPosition = resetScroll ? 1f : scrollView.verticalNormalizedPosition;
+            float scrollPosition =
+                resetScroll ? 1f : scrollView.verticalNormalizedPosition;
 
-            ClearRows();
+            ClearCards();
 
             string categoryCode = Categories[selectedCategory].Code;
             sectionTitle.text = WeaponShop.GetCategoryTitle(categoryCode);
@@ -265,9 +287,6 @@ namespace Kodimodi.UI.Profile
                 return;
             }
 
-            RectTransform row = null;
-            int count = 0;
-
             foreach (var weapon in weapons)
             {
                 if (weapon == null ||
@@ -277,33 +296,21 @@ namespace Kodimodi.UI.Profile
                     continue;
                 }
 
-                if (count % cardsPerRow == 0)
-                {
-                    row = Instantiate(rowTemplate, scrollView.content);
-                    rows.Add(row.gameObject);
+                var card = Instantiate(weaponCardPrefab, scrollView.content, false);
 
-                    foreach (Transform placeholder in row)
-                    {
-                        placeholder.gameObject.SetActive(false);
-                        Destroy(placeholder.gameObject);
-                    }
-
-                    row.gameObject.SetActive(true);
-                }
-
-                var card = Instantiate(cardTemplate, row);
+                cards.Add(card.gameObject);
                 SetCard(card, weapon);
-                count++;
+                card.gameObject.SetActive(true);
             }
 
-            modelCount.text = count == 1 ? "1 model" : $"{count} models";
+            modelCount.text = cards.Count == 1 ? "1 model" : $"{cards.Count} models";
 
             Canvas.ForceUpdateCanvases();
             scrollView.StopMovement();
             scrollView.verticalNormalizedPosition = scrollPosition;
         }
 
-        private void SetCard(Transform card, ArsenalWeapon weapon)
+        private void SetCard(RectTransform card, ArsenalWeapon weapon)
         {
             card.name = weapon.code;
             FindRequired<TMP_Text>(card, "WeaponName").text = weapon.name;
@@ -365,15 +372,15 @@ namespace Kodimodi.UI.Profile
             }
         }
 
-        private void ClearRows()
+        private void ClearCards()
         {
-            foreach (var row in rows)
+            foreach (var card in cards)
             {
-                row.SetActive(false);
-                Destroy(row);
+                card.SetActive(false);
+                Destroy(card);
             }
 
-            rows.Clear();
+            cards.Clear();
             equipButtons.Clear();
         }
 

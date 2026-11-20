@@ -13,6 +13,8 @@ namespace Kodimodi.UI.Profile
     public class WeaponShop : MonoBehaviour
     {
         [SerializeField] private string apiBaseUrl = "http://localhost:5028";
+        [SerializeField] private RectTransform weaponCardPrefab;
+        [SerializeField] private WeaponIcon[] weaponIcons = Array.Empty<WeaponIcon>();
 
         private static readonly (string Tab, string Code, string Title)[] Categories =
         {
@@ -25,19 +27,24 @@ namespace Kodimodi.UI.Profile
             ("GL_Tab", "GL", "GRENADE LAUNCHERS")
         };
 
-        private readonly List<GameObject> rows = new List<GameObject>();
+        private readonly List<GameObject> cards = new List<GameObject>();
+        private readonly Dictionary<string, Sprite> icons =
+            new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
 
         private ScrollRect scrollView;
-        private RectTransform rowTemplate;
-        private RectTransform cardTemplate;
         private TMP_Text sectionTitle;
         private TMP_Text modelCount;
         private WeaponDetails weaponDetails;
-        private Dictionary<string, Sprite> icons;
-        private int cardsPerRow;
         private int selectedCategory;
         private Coroutine loadRoutine;
         private UnityWebRequest activeRequest;
+
+        [Serializable]
+        private struct WeaponIcon
+        {
+            public string code;
+            public Sprite sprite;
+        }
 
         [Serializable]
         private sealed class CatalogResponse
@@ -75,21 +82,15 @@ namespace Kodimodi.UI.Profile
         private void Awake()
         {
             scrollView = FindRequired<ScrollRect>(transform, "WeaponsScrollView");
-            rowTemplate = FindRequired<RectTransform>(scrollView.content, "Row_1");
-            cardTemplate = FindRequired<RectTransform>(rowTemplate, "Weapon_4_SCAR-L");
-
             sectionTitle = FindRequired<TMP_Text>(transform, "SectionHeading/SectionTitle");
             modelCount = FindRequired<TMP_Text>(transform, "SectionHeading/ModelCount");
             weaponDetails = FindRequired<WeaponDetails>(transform.parent, "WeaponDetailsUI");
 
-            icons = new Dictionary<string, Sprite>
+            foreach (var entry in weaponIcons)
             {
-                ["M4A1"] = FindRequired<Image>(rowTemplate, "Weapon_1_M4A1/Weapon_Icon").sprite,
-                ["SCAR_L"] = FindRequired<Image>(cardTemplate, "Weapon_Icon").sprite
-            };
-
-            cardsPerRow = Mathf.Max(1, rowTemplate.childCount);
-            rowTemplate.gameObject.SetActive(false);
+                if (!string.IsNullOrWhiteSpace(entry.code) && entry.sprite != null)
+                    icons[entry.code.Trim()] = entry.sprite;
+            }
 
             var tabs = FindRequired<Transform>(transform, "Categories_Fixed");
 
@@ -138,11 +139,17 @@ namespace Kodimodi.UI.Profile
         private void LoadSelectedCategory()
         {
             CancelRequest();
-            ClearRows();
+            ClearCards();
 
             var category = Categories[selectedCategory];
             sectionTitle.text = category.Title;
             modelCount.text = "Loading…";
+
+            if (weaponCardPrefab == null || scrollView.content == null)
+            {
+                ShowLoadError("The shop card prefab or scroll content is missing.");
+                return;
+            }
 
             string baseUrl = apiBaseUrl.Trim().TrimEnd('/');
 
@@ -153,7 +160,8 @@ namespace Kodimodi.UI.Profile
                 return;
             }
 
-            string url = baseUrl + "/weapons?category=" + UnityWebRequest.EscapeURL(category.Code);
+            string url = baseUrl + "/weapons?category=" +
+                UnityWebRequest.EscapeURL(category.Code);
 
             var request = UnityWebRequest.Get(url);
             request.timeout = 15;
@@ -205,55 +213,28 @@ namespace Kodimodi.UI.Profile
             }
         }
 
-        private static CatalogResponse ParseCatalog(string json)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            try
-            {
-                return JsonUtility.FromJson<CatalogResponse>(json);
-            }
-            catch (ArgumentException)
-            {
-                return null;
-            }
-        }
-
         private void ShowWeapons(CatalogWeapon[] weapons, string baseUrl)
         {
-            for (int start = 0; start < weapons.Length; start += cardsPerRow)
+            foreach (var weapon in weapons)
             {
-                var row = Instantiate(rowTemplate, scrollView.content);
-                rows.Add(row.gameObject);
+                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code))
+                    continue;
 
-                foreach (Transform placeholder in row)
-                {
-                    placeholder.gameObject.SetActive(false);
-                    Destroy(placeholder.gameObject);
-                }
+                var card = Instantiate(weaponCardPrefab, scrollView.content, false);
 
-                int end = Mathf.Min(start + cardsPerRow, weapons.Length);
-
-                for (int i = start; i < end; i++)
-                {
-                    var card = Instantiate(cardTemplate, row);
-                    SetCard(card, weapons[i], baseUrl);
-                }
-
-                row.gameObject.SetActive(true);
+                cards.Add(card.gameObject);
+                SetCard(card, weapon, baseUrl);
+                card.gameObject.SetActive(true);
             }
 
-            modelCount.text = weapons.Length == 1
-                ? "1 model"
-                : $"{weapons.Length} models";
+            modelCount.text = cards.Count == 1 ? "1 model" : $"{cards.Count} models";
 
             Canvas.ForceUpdateCanvases();
             scrollView.StopMovement();
             scrollView.verticalNormalizedPosition = 1f;
         }
 
-        private void SetCard(Transform card, CatalogWeapon weapon, string baseUrl)
+        private void SetCard(RectTransform card, CatalogWeapon weapon, string baseUrl)
         {
             card.name = weapon.code;
 
@@ -263,6 +244,7 @@ namespace Kodimodi.UI.Profile
                 .Replace(',', ' ');
 
             var icon = FindRequired<Image>(card, "Weapon_Icon");
+
             icons.TryGetValue(weapon.code, out var sprite);
             icon.sprite = sprite;
             icon.enabled = sprite != null;
@@ -282,15 +264,15 @@ namespace Kodimodi.UI.Profile
                 weaponDetails.Open(baseUrl, weapon.code, sprite));
         }
 
-        private void ClearRows()
+        private void ClearCards()
         {
-            foreach (var row in rows)
+            foreach (var card in cards)
             {
-                row.SetActive(false);
-                Destroy(row);
+                card.SetActive(false);
+                Destroy(card);
             }
 
-            rows.Clear();
+            cards.Clear();
         }
 
         private void CancelRequest()
@@ -313,6 +295,21 @@ namespace Kodimodi.UI.Profile
         {
             modelCount.text = "0 models";
             ErrorPopup.Show(message, "Shop Error");
+        }
+
+        private static CatalogResponse ParseCatalog(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonUtility.FromJson<CatalogResponse>(json);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
         }
 
         private static T FindRequired<T>(Transform root, string path) where T : Component

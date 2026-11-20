@@ -206,8 +206,10 @@ namespace Kodimodi.UI.Profile
                 if (request.result != UnityWebRequest.Result.Success ||
                     request.responseCode != 200)
                 {
-                    if (request.responseCode == 401)
+                    if (request.responseCode == 401 || request.responseCode == 404)
+                    {
                         ClearRejectedSession();
+                    }
 
                     string message = request.responseCode switch
                     {
