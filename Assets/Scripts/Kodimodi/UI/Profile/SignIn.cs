@@ -48,6 +48,27 @@ namespace Kodimodi.UI.Profile
         private static extern int Kodimodi_SaveAccessToken(string token);
 #endif
 
+#if UNITY_EDITOR
+        [ContextMenu("Clear Access Token")]
+        private void ClearAccessToken()
+        {
+            if (Application.IsPlaying(gameObject))
+            {
+                var loader = FindAnyObjectByType<ProfileLoader>();
+
+                if (loader != null)
+                {
+                    loader.ResetProfile();
+                    Debug.Log("Editor access token cleared.", this);
+                    return;
+                }
+            }
+
+            EditorAuthSession.Clear();
+            Debug.Log("Editor access token cleared.", this);
+        }
+#endif
+
         private void Awake()
         {
             window = GetComponent<LeanWindow>();
