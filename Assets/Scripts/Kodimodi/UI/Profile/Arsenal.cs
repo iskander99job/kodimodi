@@ -5,6 +5,7 @@ using Lean.Gui;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Kodimodi.UI.Profile
@@ -88,22 +89,23 @@ namespace Kodimodi.UI.Profile
 
         public void Open()
         {
-            if (isEquipping)
-                return;
-
-            profileLoader = FindAnyObjectByType<ProfileLoader>();
-
-            transform.SetAsLastSibling();
-            gameObject.SetActive(true);
-
-            if (profileLoader != null &&
-                profileLoader.TryGetSession(out var apiBaseUrl, out var token))
-            {
-                LoadArsenal(apiBaseUrl, token);
-                return;
-            }
-
-            ShowGuestArsenal();
+            // if (isEquipping)
+            //     return;
+            //
+            // profileLoader = FindAnyObjectByType<ProfileLoader>();
+            //
+            // transform.SetAsLastSibling();
+            // gameObject.SetActive(true);
+            //
+            // if (profileLoader != null &&
+            //     profileLoader.TryGetSession(out var apiBaseUrl, out var token))
+            // {
+            //     LoadArsenal(apiBaseUrl, token);
+            //     return;
+            // }
+            //
+            // ShowGuestArsenal();
+            SceneManager.LoadScene("WeaponShopScene");
         }
 
         public void Close()
