@@ -221,13 +221,13 @@ namespace Kodimodi.UI.Profile
 
             var label = button.transform.Find("Weapon Label").GetComponent<Text>();
             label.text = weapon.name;
-            label.richText = false;
+            label.supportRichText = false;
             RenderIcon(button.transform.Find("Thumbnail").GetComponent<Image>(), weapon.code);
 
             var rank = button.transform.Find("Required Rank").GetComponent<Text>();
             rank.text = weapon.minRank?.englishName ?? "";
             rank.gameObject.SetActive(!string.IsNullOrEmpty(rank.text));
-            rank.richText = false;
+            rank.supportRichText = false;
             rank.resizeTextForBestFit = true;
             rank.resizeTextMinSize = 10;
             rank.resizeTextMaxSize = rank.fontSize;
