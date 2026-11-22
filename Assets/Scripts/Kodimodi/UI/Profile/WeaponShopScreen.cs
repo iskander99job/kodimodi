@@ -26,8 +26,6 @@ namespace Kodimodi.UI.Profile
         [SerializeField] private ShopRankIcons rankIcons;
 
         private readonly List<WeaponCard> cards = new();
-        private static readonly Color OwnedBadgeColor = new Color32(36, 96, 60, 255);
-        private static readonly Color DefaultBadgeColor = new Color32(49, 55, 65, 255);
         private readonly HashSet<string> owned = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<(Button Button, GameObject Selected, string Code)> tabs = new();
 
@@ -36,6 +34,8 @@ namespace Kodimodi.UI.Profile
         private ScrollRect scroll;
         private Button template;
         private Sprite selectedCardSprite;
+        private RectTransform priceBadgeTemplate;
+        private RectTransform ownedBadgeTemplate;
         private LeanButton back;
         private LeanButton buy;
         private TMP_Text balance;
@@ -87,9 +87,9 @@ namespace Kodimodi.UI.Profile
             public Button Button;
             public Weapon Weapon;
             public Image Background;
-            public Image Badge;
+            public GameObject PriceBadge;
+            public GameObject OwnedBadge;
             public Text RequiredRank;
-            public Text BadgeLabel;
         }
 
         private void Awake()
@@ -113,7 +113,10 @@ namespace Kodimodi.UI.Profile
 
             scroll = page.Find("Weapon Scroll View").GetComponent<ScrollRect>();
             template = scroll.content.Find("P-22 Card").GetComponent<Button>();
-            selectedCardSprite = scroll.content.Find("P-07 Card").GetComponent<Image>().sprite;
+            var priceCard = scroll.content.Find("P-07 Card");
+            selectedCardSprite = priceCard.GetComponent<Image>().sprite;
+            priceBadgeTemplate = (RectTransform)priceCard.Find("Status Badge");
+            ownedBadgeTemplate = (RectTransform)scroll.content.Find("P-12 Card/Status Badge");
             foreach (Transform mockCard in scroll.content)
                 mockCard.gameObject.SetActive(false);
 
@@ -234,42 +237,31 @@ namespace Kodimodi.UI.Profile
             rank.resizeTextMinSize = 10;
             rank.resizeTextMaxSize = rank.fontSize;
 
-            var badge = button.transform.Find("Status Badge").GetComponent<Image>();
-            var badgeLabel = CreateCardLabel(rank, badge.transform, "Label", TextAnchor.MiddleCenter,
-                Vector2.zero, Vector2.one, Color.white);
-            var price = CreateCardLabel(rank, button.transform, "Price", TextAnchor.MiddleCenter,
-                new Vector2(0.735f, 0.08f), new Vector2(0.955f, 0.31f), new Color32(30, 30, 30, 255));
-            price.text = FormatAmount(weapon.price);
+            var originalBadge = button.transform.Find("Status Badge");
+            originalBadge.gameObject.SetActive(false);
+            int badgeIndex = originalBadge.GetSiblingIndex();
+            Destroy(originalBadge.gameObject);
+
+            var priceBadge = Instantiate(priceBadgeTemplate, button.transform, false);
+            priceBadge.SetSiblingIndex(badgeIndex);
+            priceBadge.Find("Status Label").GetComponent<Text>().text = FormatAmount(weapon.price);
+
+            var ownedBadge = Instantiate(ownedBadgeTemplate, button.transform, false);
+            ownedBadge.SetSiblingIndex(badgeIndex);
 
             var card = new WeaponCard
             {
                 Button = button,
                 Weapon = weapon,
                 Background = button.GetComponent<Image>(),
-                Badge = badge,
-                BadgeLabel = badgeLabel,
+                PriceBadge = priceBadge.gameObject,
+                OwnedBadge = ownedBadge.gameObject,
                 RequiredRank = rank
             };
             cards.Add(card);
             RenderCard(card);
             button.onClick.AddListener(() => SelectWeapon(weapon));
             button.gameObject.SetActive(true);
-        }
-
-        private static Text CreateCardLabel(Text template, Transform parent, string name,
-            TextAnchor alignment, Vector2 min, Vector2 max, Color color)
-        {
-            var label = Instantiate(template, parent, false);
-            label.name = name;
-            label.alignment = alignment;
-            label.color = color;
-            label.raycastTarget = false;
-            label.rectTransform.anchorMin = min;
-            label.rectTransform.anchorMax = max;
-            label.rectTransform.offsetMin = Vector2.zero;
-            label.rectTransform.offsetMax = Vector2.zero;
-            label.gameObject.SetActive(true);
-            return label;
         }
 
         private void RenderCard(WeaponCard card)
@@ -279,8 +271,8 @@ namespace Kodimodi.UI.Profile
             bool locked = !isOwned && IsRankLocked(card.Weapon);
             card.Background.sprite = isSelected ? selectedCardSprite : template.image.sprite;
             card.RequiredRank.gameObject.SetActive(locked && !string.IsNullOrEmpty(card.RequiredRank.text));
-            card.Badge.color = isOwned ? OwnedBadgeColor : DefaultBadgeColor;
-            card.BadgeLabel.text = isOwned ? "OWNED" : locked ? "LOCKED" : "AVAILABLE";
+            card.PriceBadge.SetActive(!isOwned);
+            card.OwnedBadge.SetActive(isOwned);
             card.Button.transform.Find("Lock Icon").gameObject.SetActive(locked);
         }
 
