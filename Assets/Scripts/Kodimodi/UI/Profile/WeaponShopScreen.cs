@@ -17,7 +17,7 @@ namespace Kodimodi.UI.Profile
         private static readonly (string Tab, string Code)[] Categories =
         {
             ("AR", "AR"), ("PISTOL", "PST"), ("SMG", "SMG"),
-            ("SHOTGUN", "SG"), ("MG", "MG"), ("SR", "SR")
+            ("SHOTGUN", "SG")
         };
 
         [SerializeField] private string apiBaseUrl = "http://localhost:5028";
@@ -79,12 +79,12 @@ namespace Kodimodi.UI.Profile
                 child.gameObject.SetActive(child == page);
 
             var categoryBar = transform.Find("Categories");
-            categoryBar.Find("Compact").gameObject.SetActive(false);
-            var fullBar = categoryBar.Find("Full Width");
-            fullBar.gameObject.SetActive(true);
+            categoryBar.Find("Full Width").gameObject.SetActive(false);
+            var compactBar = categoryBar.Find("Compact");
+            compactBar.gameObject.SetActive(true);
             foreach (var (name, code) in Categories)
             {
-                var tab = fullBar.Find(name + " Tab");
+                var tab = compactBar.Find(name + " Tab");
                 var button = tab.GetComponent<Button>();
                 tabs.Add((button, tab.Find("Selected").gameObject, code));
                 button.onClick.AddListener(() => SelectCategory(code));
