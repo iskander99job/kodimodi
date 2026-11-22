@@ -36,7 +36,7 @@ namespace Kodimodi.UI.Profile
         private GameObject categoryBar;
         private GameObject categoryPages;
         private GameObject loadingSpinner;
-        private Text loadError;
+        private Text centerMessage;
         private LeanButton retryButton;
         private Action retryLoad;
         private Transform states;
@@ -47,6 +47,7 @@ namespace Kodimodi.UI.Profile
         private RectTransform ownedBadgeTemplate;
         private LeanButton back;
         private LeanButton buy;
+        private LeanButton viewInArsenal;
         private TMP_Text balance;
         private Text message;
         private string token;
@@ -85,6 +86,7 @@ namespace Kodimodi.UI.Profile
         {
             public string code;
             public string name;
+            public string categoryCode;
             public int price;
             public Rank minRank;
             public WeaponStatValue[] stats;
@@ -134,6 +136,8 @@ namespace Kodimodi.UI.Profile
             message = Instantiate(pages.Find("AR Page/Empty Message"), page).GetComponent<Text>();
             states = page.Find("Purchase States");
             buy = states.Find("Available").GetComponent<LeanButton>();
+            viewInArsenal = states.Find("Owned").GetComponent<LeanButton>();
+            viewInArsenal.OnClick.AddListener(ViewInArsenal);
             buy.transform.Find("Label").GetComponent<Text>().text = "BUY";
             buy.transform.Find("Coin Icon").gameObject.SetActive(false);
             back = transform.Find("Header/Back").GetComponent<LeanButton>();
@@ -207,8 +211,7 @@ namespace Kodimodi.UI.Profile
             }
 
             Catalog catalog = null;
-            string path = "/weapons?category=" + UnityWebRequest.EscapeURL(category);
-            yield return Send(UnityWebRequest.Get(apiBaseUrl + path),
+            yield return Send(UnityWebRequest.Get(apiBaseUrl + "/weapons"),
                 request => catalog = ReadSuccess<Catalog>(request));
 
             if (catalog?.weapons == null)
@@ -218,14 +221,29 @@ namespace Kodimodi.UI.Profile
             }
 
             Weapon first = null;
+            bool hasCatalogWeapons = false;
+            bool hasUnownedWeapons = false;
             foreach (var weapon in catalog.weapons)
             {
-                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code) ||
-                    owned.Contains(weapon.code))
+                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code))
+                    continue;
+
+                hasCatalogWeapons = true;
+                if (owned.Contains(weapon.code))
+                    continue;
+
+                hasUnownedWeapons = true;
+                if (!string.Equals(weapon.categoryCode, category, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 first ??= weapon;
                 CreateCard(weapon);
+            }
+
+            if (!hasUnownedWeapons)
+            {
+                ShowEmptyCatalog(hasCatalogWeapons);
+                yield break;
             }
 
             SetMessage(first == null ? "No weapons in this category." : null);
@@ -430,6 +448,12 @@ namespace Kodimodi.UI.Profile
                 ErrorPopup.Show(error, "Purchase Error");
         }
 
+        private void ViewInArsenal()
+        {
+            if (!buying && selected != null && owned.Contains(selected.code))
+                ArsenalScreen.OpenWeapon(selected.code);
+        }
+
         private void RenderSelection()
         {
             page.Find("Weapon Name").GetComponent<Text>().text = selected?.name ?? "";
@@ -448,7 +472,8 @@ namespace Kodimodi.UI.Profile
                 ? selected.minRank.englishName + " required"
                 : string.IsNullOrEmpty(token) ? "Sign in to purchase" : "Profile unavailable";
 
-            states.Find("Owned").gameObject.SetActive(isOwned && !buying);
+            viewInArsenal.gameObject.SetActive(isOwned && !buying);
+            viewInArsenal.interactable = isOwned && !buying;
             states.Find("Spinner").gameObject.SetActive(buying);
             buy.gameObject.SetActive(selected != null && !isOwned && !locked && profile != null && !buying);
             foreach (var card in cards)
@@ -479,12 +504,12 @@ namespace Kodimodi.UI.Profile
 
         private void CreateLoadError()
         {
-            loadError = Instantiate(message, transform, false);
-            loadError.name = "Load Error";
-            loadError.alignment = TextAnchor.MiddleCenter;
-            loadError.raycastTarget = false;
-            Center(loadError.rectTransform, new Vector2(640f, 48f), 24f);
-            loadError.gameObject.SetActive(false);
+            centerMessage = Instantiate(message, transform, false);
+            centerMessage.name = "Load Error";
+            centerMessage.alignment = TextAnchor.MiddleCenter;
+            centerMessage.raycastTarget = false;
+            Center(centerMessage.rectTransform, new Vector2(640f, 48f), 24f);
+            centerMessage.gameObject.SetActive(false);
 
             retryButton = Instantiate(buy, transform, false);
             retryButton.name = "Retry";
@@ -504,7 +529,7 @@ namespace Kodimodi.UI.Profile
         private void BeginLoad()
         {
             retryLoad = null;
-            loadError.gameObject.SetActive(false);
+            centerMessage.gameObject.SetActive(false);
             retryButton.gameObject.SetActive(false);
             categoryBar.SetActive(false);
             categoryPages.SetActive(false);
@@ -522,9 +547,32 @@ namespace Kodimodi.UI.Profile
         {
             loadingSpinner.SetActive(false);
             retryLoad = retry;
-            loadError.text = error;
-            loadError.gameObject.SetActive(true);
+            centerMessage.rectTransform.anchoredPosition = new Vector2(0f, 24f);
+            centerMessage.text = error;
+            centerMessage.gameObject.SetActive(true);
             retryButton.gameObject.SetActive(true);
+        }
+
+        private void ShowEmptyCatalog(bool hasCatalogWeapons)
+        {
+            loadingSpinner.SetActive(false);
+            retryButton.gameObject.SetActive(false);
+            centerMessage.rectTransform.anchoredPosition = Vector2.zero;
+
+            if (ProfileLoader.UseRussianInventoryStats)
+            {
+                centerMessage.text = hasCatalogWeapons
+                    ? "Вы купили всё доступное оружие."
+                    : "В магазине пока нет оружия.";
+            }
+            else
+            {
+                centerMessage.text = hasCatalogWeapons
+                    ? "You've purchased all available weapons."
+                    : "No weapons are currently available.";
+            }
+
+            centerMessage.gameObject.SetActive(true);
         }
 
         private void ResetScroll()

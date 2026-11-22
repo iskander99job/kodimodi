@@ -60,6 +60,14 @@ namespace Kodimodi.UI.Profile
         [Serializable] private sealed class Profile { public int coins; }
         [Serializable] private sealed class Details { public WeaponStatValue[] stats; }
 
+        private static string weaponToOpen;
+
+        internal static void OpenWeapon(string code)
+        {
+            weaponToOpen = code;
+            SceneManager.LoadScene("ArsenalScene");
+        }
+
         private void Awake()
         {
             var pages = transform.Find("Category Pages");
@@ -98,6 +106,9 @@ namespace Kodimodi.UI.Profile
 
         private void Start()
         {
+            var preferredCode = weaponToOpen;
+            weaponToOpen = null;
+
             if (!ProfileLoader.TryGetShopSession(out apiBaseUrl, out token))
             {
                 spinner.SetActive(false);
@@ -105,7 +116,7 @@ namespace Kodimodi.UI.Profile
                 return;
             }
 
-            StartCoroutine(Load(selectFirstOwnedCategory: true));
+            StartCoroutine(Load(preferredCode, selectFirstOwnedCategory: true));
             StartCoroutine(LoadBalance());
         }
 
@@ -164,6 +175,16 @@ namespace Kodimodi.UI.Profile
             fullBar.gameObject.SetActive(hasAdditionalCategories);
             if (!hasAdditionalCategories && (category == "MG" || category == "SR"))
                 category = "AR";
+
+            if (selectFirstOwnedCategory && preferredCode != null)
+            {
+                var preferred = Array.Find(weapons, weapon => weapon != null && Matches(weapon.code, preferredCode));
+                if (preferred != null)
+                {
+                    var entry = Array.Find(Categories, item => Matches(item.Code, preferred.categoryCode));
+                    category = entry.Code ?? category;
+                }
+            }
 
             if (selectFirstOwnedCategory && !Array.Exists(weapons, weapon =>
                     weapon != null && Matches(weapon.categoryCode, category)))
