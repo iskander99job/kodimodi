@@ -30,6 +30,12 @@ namespace Kodimodi.UI.Profile
         private readonly List<(Button Button, GameObject Selected, string Code)> tabs = new();
 
         private Transform page;
+        private GameObject categoryBar;
+        private GameObject categoryPages;
+        private GameObject loadingSpinner;
+        private Text loadError;
+        private LeanButton retryButton;
+        private Action retryLoad;
         private Transform states;
         private ScrollRect scroll;
         private Button template;
@@ -95,13 +101,14 @@ namespace Kodimodi.UI.Profile
         private void Awake()
         {
             var pages = transform.Find("Category Pages");
+            categoryPages = pages.gameObject;
             page = pages.Find("PISTOL Page");
             foreach (Transform child in pages)
                 child.gameObject.SetActive(child == page);
 
-            var categoryBar = transform.Find("Categories");
-            categoryBar.Find("Full Width").gameObject.SetActive(false);
-            var compactBar = categoryBar.Find("Compact");
+            categoryBar = transform.Find("Categories").gameObject;
+            categoryBar.transform.Find("Full Width").gameObject.SetActive(false);
+            var compactBar = categoryBar.transform.Find("Compact");
             compactBar.gameObject.SetActive(true);
             foreach (var (name, code) in Categories)
             {
@@ -124,14 +131,16 @@ namespace Kodimodi.UI.Profile
             message = Instantiate(pages.Find("AR Page/Empty Message"), page).GetComponent<Text>();
             states = page.Find("Purchase States");
             buy = states.Find("Available").GetComponent<LeanButton>();
-            buy.OnClick.AddListener(Buy);
             buy.transform.Find("Label").GetComponent<Text>().text = "BUY";
             buy.transform.Find("Coin Icon").gameObject.SetActive(false);
             back = transform.Find("Header/Back").GetComponent<LeanButton>();
             back.OnClick.AddListener(ReturnToProfile);
             balance = transform.Find("Header/BalancePanel/BalanceText").GetComponent<TMP_Text>();
             transform.Find("Header/BalancePanel/AddCurrencyButton").gameObject.SetActive(false);
-            transform.Find("Spinner").gameObject.SetActive(false);
+            loadingSpinner = transform.Find("Spinner").gameObject;
+            loadingSpinner.SetActive(false);
+            CreateLoadError();
+            buy.OnClick.AddListener(Buy);
             scroll.transform.Find("Spinner").gameObject.SetActive(false);
         }
 
@@ -142,16 +151,6 @@ namespace Kodimodi.UI.Profile
 
             UpdateBalance();
             apiBaseUrl = apiBaseUrl.Trim().TrimEnd('/');
-            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var url) ||
-                (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps))
-            {
-                SetMessage("The API address is invalid.");
-                RenderSelection();
-                foreach (var tab in tabs)
-                    tab.Button.interactable = false;
-                return;
-            }
-
             SelectCategory("AR");
         }
 
@@ -180,14 +179,31 @@ namespace Kodimodi.UI.Profile
             selected = null;
             selectedCode = null;
             RenderSelection();
-            SetMessage("Loading…");
+            SetMessage(null);
+            BeginLoad();
             Run(LoadCatalog());
         }
 
         private IEnumerator LoadCatalog()
         {
+            Action retry = () => SelectCategory(category);
+            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var url) ||
+                (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps))
+            {
+                ShowLoadError("The API address is invalid.", retry);
+                yield break;
+            }
+
             if (!string.IsNullOrEmpty(token))
-                yield return LoadAccount();
+            {
+                bool loaded = false;
+                yield return LoadAccount(() => loaded = true);
+                if (!loaded)
+                {
+                    ShowLoadError("Couldn't load the shop. Please try again.", retry);
+                    yield break;
+                }
+            }
 
             Catalog catalog = null;
             string path = "/weapons?category=" + UnityWebRequest.EscapeURL(category);
@@ -196,7 +212,7 @@ namespace Kodimodi.UI.Profile
 
             if (catalog?.weapons == null)
             {
-                SetMessage("Couldn't load weapons. Select a category to retry.");
+                ShowLoadError("Couldn't load weapons. Please try again.", retry);
                 yield break;
             }
 
@@ -212,11 +228,13 @@ namespace Kodimodi.UI.Profile
             }
 
             SetMessage(first == null ? "No weapons in this category." : null);
-            Canvas.ForceUpdateCanvases();
-            scroll.StopMovement();
-            scroll.verticalNormalizedPosition = 1f;
-            if (first != null)
+            if (first == null)
+                FinishLoad();
+            else
                 yield return LoadDetails(first);
+
+            if (categoryPages.activeSelf)
+                ResetScroll();
         }
 
         private void CreateCard(Weapon weapon)
@@ -281,7 +299,7 @@ namespace Kodimodi.UI.Profile
             return weapon?.minRank != null && profile != null && profile.xp < weapon.minRank.minXp;
         }
 
-        private IEnumerator LoadAccount()
+        private IEnumerator LoadAccount(Action onLoaded = null)
         {
             var request = UnityWebRequest.Get(apiBaseUrl + "/profile");
             request.SetRequestHeader("Authorization", "Bearer " + token);
@@ -308,6 +326,8 @@ namespace Kodimodi.UI.Profile
                     if (weapon != null && !string.IsNullOrWhiteSpace(weapon.code))
                         owned.Add(weapon.code);
                 }
+
+                onLoaded?.Invoke();
             });
         }
 
@@ -317,6 +337,7 @@ namespace Kodimodi.UI.Profile
                 return;
 
             CancelPending();
+            BeginLoad();
             Run(LoadDetails(weapon));
         }
 
@@ -325,7 +346,6 @@ namespace Kodimodi.UI.Profile
             selected = null;
             selectedCode = weapon.code;
             RenderSelection();
-            page.Find("Weapon Name").GetComponent<Text>().text = "Loading…";
 
             yield return Send(
                 UnityWebRequest.Get(apiBaseUrl + "/weapons/" + Uri.EscapeDataString(weapon.code)),
@@ -333,13 +353,13 @@ namespace Kodimodi.UI.Profile
 
             if (selected == null)
             {
-                page.Find("Weapon Name").GetComponent<Text>().text =
-                    "Couldn't load details. Select the weapon to retry.";
+                ShowLoadError("Couldn't load weapon details. Please try again.", () => SelectWeapon(weapon));
                 yield break;
             }
 
             selected.code = weapon.code;
             RenderSelection();
+            FinishLoad();
         }
 
         private void Buy()
@@ -464,6 +484,63 @@ namespace Kodimodi.UI.Profile
         private static string FormatAmount(int amount)
         {
             return amount.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');
+        }
+
+        private void CreateLoadError()
+        {
+            loadError = Instantiate(message, transform, false);
+            loadError.name = "Load Error";
+            loadError.alignment = TextAnchor.MiddleCenter;
+            loadError.raycastTarget = false;
+            Center(loadError.rectTransform, new Vector2(640f, 48f), 24f);
+            loadError.gameObject.SetActive(false);
+
+            retryButton = Instantiate(buy, transform, false);
+            retryButton.name = "Retry";
+            retryButton.transform.Find("Label").GetComponent<Text>().text = "Retry";
+            retryButton.OnClick.AddListener(() => retryLoad?.Invoke());
+            Center((RectTransform)retryButton.transform, new Vector2(160f, 48f), -34f);
+            retryButton.gameObject.SetActive(false);
+        }
+
+        private static void Center(RectTransform rect, Vector2 size, float y)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(0f, y);
+        }
+
+        private void BeginLoad()
+        {
+            retryLoad = null;
+            loadError.gameObject.SetActive(false);
+            retryButton.gameObject.SetActive(false);
+            categoryBar.SetActive(false);
+            categoryPages.SetActive(false);
+            loadingSpinner.SetActive(true);
+        }
+
+        private void FinishLoad()
+        {
+            loadingSpinner.SetActive(false);
+            categoryBar.SetActive(true);
+            categoryPages.SetActive(true);
+        }
+
+        private void ShowLoadError(string error, Action retry)
+        {
+            loadingSpinner.SetActive(false);
+            retryLoad = retry;
+            loadError.text = error;
+            loadError.gameObject.SetActive(true);
+            retryButton.gameObject.SetActive(true);
+        }
+
+        private void ResetScroll()
+        {
+            Canvas.ForceUpdateCanvases();
+            scroll.StopMovement();
+            scroll.verticalNormalizedPosition = 1f;
         }
 
         private void SetMessage(string value)
