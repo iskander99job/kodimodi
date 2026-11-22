@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/ProfileScene.unity
     guid: d443cd71844b84640ac1e3af808f30d6
   - enabled: 1
-    path: Assets/Scenes/WeaponShopSceneOld.unity
+    path: Assets/Scenes/WeaponShopScene.unity
     guid: 4c25fedc03dd441d0bfc14a9d2d875c1
   - enabled: 0
     path: Assets/Scenes/BattleScene.unity

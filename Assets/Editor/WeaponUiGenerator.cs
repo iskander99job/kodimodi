@@ -160,30 +160,54 @@ public static class WeaponUiGenerator
             return shop;
         }
 
-        private void BuildTabs(RectTransform shop)
+        private void BuildTabs(RectTransform screen)
         {
-            RectTransform strip = Page(shop, "Categories", 28, 130, 1616, 75);
+            RectTransform variants = Box(screen, "Categories", 0, 0, 1, 1);
+
+            RectTransform full = Page(variants, "Full Width", 28, 130, 1616, 75);
+            BuildTabStrip(full, compact: false);
+
+            RectTransform compact = Page(variants, "Compact", 28, 215, 656, 64);
+            BuildTabStrip(compact, compact: true);
+            compact.gameObject.SetActive(false);
+        }
+
+        private void BuildTabStrip(RectTransform strip, bool compact)
+        {
             ImageOf(strip, panel, Color.white);
 
-            float width = 1f / Categories.Length;
+            string[] categories = compact
+                ? new[] { "PISTOL", "AR", "SHOTGUN", "SMG" }
+                : Categories;
 
-            for (int i = 0; i < Categories.Length; i++)
+            // Ширины четырёх вкладок в компактной полосе на референсе.
+            float[] compactWidths = { 173f, 128f, 204f, 151f };
+            float left = 0f;
+
+            for (int i = 0; i < categories.Length; i++)
             {
-                RectTransform tab = Box(strip, Categories[i] + " Tab", i * width, 0, width, 1);
+                string category = categories[i];
+                float width = compact
+                    ? compactWidths[i] / 656f
+                    : 1f / categories.Length;
+
+                RectTransform tab = Box(strip, category + " Tab", left, 0, width, 1);
+                left += width;
+
                 Button button = ButtonOf(tab, null);
                 button.transition = Selectable.Transition.None;
-                button.targetGraphic.color = new Color(1, 1, 1, .005f);
+                button.targetGraphic.color = new Color(1f, 1f, 1f, .005f);
 
                 RectTransform highlight = Box(tab, "Selected", 0, 0, 1, 1);
                 ImageOf(highlight, selectedTab, Color.white);
                 highlight.gameObject.SetActive(i == 0);
 
                 if (i > 0)
-                    Rule(tab, "Divider", 0, .18f, .82f);
+                    Rule(tab, "Divider", 0, .22f, .78f);
 
-                Art(Box(tab, "Category Icon", .17f, .23f, .22f, .54f));
-                Label(Box(tab, "Category Label", .40f, 0, .55f, 1),
-                    Categories[i], 23, bold: true);
+                Art(Box(tab, "Category Icon", .14f, .23f, .23f, .54f));
+                Label(Box(tab, "Category Label", .41f, 0, .55f, 1),
+                    category, compact ? 21 : 23, bold: true);
             }
         }
 
