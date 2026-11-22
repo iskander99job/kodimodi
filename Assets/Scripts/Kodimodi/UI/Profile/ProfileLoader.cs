@@ -101,13 +101,17 @@ namespace Kodimodi.UI.Profile
 #endif
         }
 
-        public void OpenWeaponShop()
+        public void OpenWeaponShop() => OpenInventoryScene("WeaponShopScene");
+
+        public void OpenArsenal() => OpenInventoryScene("ArsenalScene");
+
+        private void OpenInventoryScene(string sceneName)
         {
             if (isLoading)
                 return;
 
             shopSession = (sessionApiBaseUrl, sessionAccessToken);
-            SceneManager.LoadScene("WeaponShopScene");
+            SceneManager.LoadScene(sceneName);
         }
 
         internal static bool TryGetShopSession(out string apiBaseUrl, out string token)

@@ -5894,6 +5894,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 866319892}
+  - component: {fileID: 866319893}
   m_Layer: 5
   m_Name: Arsenal UI
   m_TagString: Untagged
@@ -5901,6 +5902,19 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &866319893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 866319891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aade3e500b5d460fbb8d0118d2207cda, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.ArsenalScreen
+  weaponIcons: []
 --- !u!224 &866319892
 RectTransform:
   m_ObjectHideFlags: 0
