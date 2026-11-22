@@ -23,7 +23,12 @@ namespace Kodimodi.UI.Profile
         [SerializeField] private string apiBaseUrl = "http://localhost:5028";
         [SerializeField] private WeaponIcon[] weaponIcons = Array.Empty<WeaponIcon>();
 
-        private readonly List<GameObject> cards = new();
+        [SerializeField] private ShopRankIcons rankIcons;
+
+        private readonly List<WeaponCard> cards = new();
+        private static readonly Color SelectedCardColor = new Color32(174, 204, 235, 255);
+        private static readonly Color OwnedBadgeColor = new Color32(36, 96, 60, 255);
+        private static readonly Color DefaultBadgeColor = new Color32(49, 55, 65, 255);
         private readonly HashSet<string> owned = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<(Button Button, GameObject Selected, string Code)> tabs = new();
 
@@ -38,6 +43,7 @@ namespace Kodimodi.UI.Profile
         private string token;
         private string category;
         private Weapon selected;
+        private string selectedCode;
         private RankProfile profile;
         private bool buying;
         private UnityWebRequest activeRequest;
@@ -52,7 +58,12 @@ namespace Kodimodi.UI.Profile
 
         [Serializable] private sealed class Catalog { public Weapon[] weapons; }
         [Serializable] private sealed class RankProfile { public int coins; public int xp; }
-        [Serializable] private sealed class Rank { public string englishName; public int minXp; }
+        [Serializable] private sealed class Rank
+        {
+            public string code;
+            public string englishName;
+            public int minXp;
+        }
         [Serializable] private sealed class Stat { public string statCode; public int value; }
         [Serializable] private sealed class Purchase
         {
@@ -69,6 +80,14 @@ namespace Kodimodi.UI.Profile
             public int price;
             public Rank minRank;
             public Stat[] stats;
+        }
+
+        private sealed class WeaponCard
+        {
+            public Button Button;
+            public Weapon Weapon;
+            public Image Badge;
+            public Text BadgeLabel;
         }
 
         private void Awake()
@@ -91,7 +110,7 @@ namespace Kodimodi.UI.Profile
             }
 
             scroll = page.Find("Weapon Scroll View").GetComponent<ScrollRect>();
-            template = scroll.content.Find("P-12 Card").GetComponent<Button>();
+            template = scroll.content.Find("P-22 Card").GetComponent<Button>();
             foreach (Transform mockCard in scroll.content)
                 mockCard.gameObject.SetActive(false);
 
@@ -100,6 +119,8 @@ namespace Kodimodi.UI.Profile
             states = page.Find("Purchase States");
             buy = states.Find("Available").GetComponent<LeanButton>();
             buy.OnClick.AddListener(Buy);
+            buy.transform.Find("Label").GetComponent<Text>().text = "BUY";
+            buy.transform.Find("Coin Icon").gameObject.SetActive(false);
             back = transform.Find("Header/Back").GetComponent<LeanButton>();
             back.OnClick.AddListener(ReturnToProfile);
             balance = transform.Find("Header/BalancePanel/BalanceText").GetComponent<TMP_Text>();
@@ -145,12 +166,13 @@ namespace Kodimodi.UI.Profile
 
             foreach (var card in cards)
             {
-                card.SetActive(false);
-                Destroy(card);
+                card.Button.gameObject.SetActive(false);
+                Destroy(card.Button.gameObject);
             }
 
             cards.Clear();
             selected = null;
+            selectedCode = null;
             RenderSelection();
             SetMessage("Loading…");
             Run(LoadCatalog());
@@ -158,7 +180,7 @@ namespace Kodimodi.UI.Profile
 
         private IEnumerator LoadCatalog()
         {
-            if (profile == null && !string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(token))
                 yield return LoadAccount();
 
             Catalog catalog = null;
@@ -175,18 +197,12 @@ namespace Kodimodi.UI.Profile
             Weapon first = null;
             foreach (var weapon in catalog.weapons)
             {
-                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code))
+                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code) ||
+                    owned.Contains(weapon.code))
                     continue;
 
                 first ??= weapon;
-                var card = Instantiate(template, scroll.content);
-                card.name = weapon.code;
-                card.transform.Find("Weapon Label").GetComponent<Text>().text = weapon.name;
-                card.transform.Find("Status Badge").gameObject.SetActive(false);
-                RenderIcon(card.transform.Find("Thumbnail").GetComponent<Image>(), weapon.code);
-                card.onClick.AddListener(() => SelectWeapon(weapon));
-                card.gameObject.SetActive(true);
-                cards.Add(card.gameObject);
+                CreateCard(weapon);
             }
 
             SetMessage(first == null ? "No weapons in this category." : null);
@@ -195,6 +211,74 @@ namespace Kodimodi.UI.Profile
             scroll.verticalNormalizedPosition = 1f;
             if (first != null)
                 yield return LoadDetails(first);
+        }
+
+        private void CreateCard(Weapon weapon)
+        {
+            var button = Instantiate(template, scroll.content);
+            button.name = weapon.code;
+            button.transition = Selectable.Transition.None;
+
+            var label = button.transform.Find("Weapon Label").GetComponent<Text>();
+            label.text = weapon.name;
+            label.richText = false;
+            RenderIcon(button.transform.Find("Thumbnail").GetComponent<Image>(), weapon.code);
+
+            var rank = button.transform.Find("Required Rank").GetComponent<Text>();
+            rank.text = weapon.minRank?.englishName ?? "";
+            rank.gameObject.SetActive(!string.IsNullOrEmpty(rank.text));
+            rank.richText = false;
+            rank.resizeTextForBestFit = true;
+            rank.resizeTextMinSize = 10;
+            rank.resizeTextMaxSize = rank.fontSize;
+            rank.rectTransform.anchorMax = new Vector2(0.72f, rank.rectTransform.anchorMax.y);
+
+            var badge = button.transform.Find("Status Badge").GetComponent<Image>();
+            var badgeLabel = CreateCardLabel(rank, badge.transform, "Label", TextAnchor.MiddleCenter,
+                Vector2.zero, Vector2.one, Color.white);
+            var price = CreateCardLabel(rank, button.transform, "Price", TextAnchor.MiddleCenter,
+                new Vector2(0.735f, 0.08f), new Vector2(0.955f, 0.31f), new Color32(30, 30, 30, 255));
+            price.text = FormatAmount(weapon.price);
+
+            var card = new WeaponCard
+            {
+                Button = button, Weapon = weapon, Badge = badge, BadgeLabel = badgeLabel
+            };
+            cards.Add(card);
+            RenderCard(card);
+            button.onClick.AddListener(() => SelectWeapon(weapon));
+            button.gameObject.SetActive(true);
+        }
+
+        private static Text CreateCardLabel(Text template, Transform parent, string name,
+            TextAnchor alignment, Vector2 min, Vector2 max, Color color)
+        {
+            var label = Instantiate(template, parent, false);
+            label.name = name;
+            label.alignment = alignment;
+            label.color = color;
+            label.raycastTarget = false;
+            label.rectTransform.anchorMin = min;
+            label.rectTransform.anchorMax = max;
+            label.rectTransform.offsetMin = Vector2.zero;
+            label.rectTransform.offsetMax = Vector2.zero;
+            label.gameObject.SetActive(true);
+            return label;
+        }
+
+        private void RenderCard(WeaponCard card)
+        {
+            bool isOwned = owned.Contains(card.Weapon.code);
+            bool isSelected = string.Equals(card.Weapon.code, selectedCode, StringComparison.OrdinalIgnoreCase);
+            card.Button.targetGraphic.color = isSelected ? SelectedCardColor : template.targetGraphic.color;
+            card.Badge.color = isOwned ? OwnedBadgeColor : DefaultBadgeColor;
+            card.BadgeLabel.text = isOwned ? "OWNED" : IsRankLocked(card.Weapon) ? "LOCKED" : "AVAILABLE";
+            card.Button.transform.Find("Lock Icon").gameObject.SetActive(!isOwned && IsRankLocked(card.Weapon));
+        }
+
+        private bool IsRankLocked(Weapon weapon)
+        {
+            return weapon?.minRank != null && profile != null && profile.xp < weapon.minRank.minXp;
         }
 
         private IEnumerator LoadAccount()
@@ -239,6 +323,7 @@ namespace Kodimodi.UI.Profile
         private IEnumerator LoadDetails(Weapon weapon)
         {
             selected = null;
+            selectedCode = weapon.code;
             RenderSelection();
             page.Find("Weapon Name").GetComponent<Text>().text = "Loading…";
 
@@ -259,7 +344,8 @@ namespace Kodimodi.UI.Profile
 
         private void Buy()
         {
-            if (buying || selected == null || profile == null || owned.Contains(selected.code))
+            if (buying || selected == null || profile == null || IsRankLocked(selected) ||
+                owned.Contains(selected.code))
                 return;
 
             buying = true;
@@ -330,12 +416,13 @@ namespace Kodimodi.UI.Profile
             RenderStat("RELOAD", "RELOAD");
 
             bool isOwned = selected != null && owned.Contains(selected.code);
-            bool locked = selected?.minRank != null && profile != null &&
-                profile.xp < selected.minRank.minXp;
+            bool locked = IsRankLocked(selected);
             var unavailable = states.Find("Rank Locked");
             unavailable.gameObject.SetActive(selected != null && !isOwned && !buying &&
                 (locked || profile == null));
-            unavailable.Find("Rank Icon").gameObject.SetActive(locked);
+            var rankIcon = unavailable.Find("Rank Icon").GetComponent<Image>();
+            rankIcon.sprite = locked ? rankIcons?.Find(selected.minRank.code) : null;
+            rankIcon.gameObject.SetActive(rankIcon.sprite != null);
             unavailable.Find("Label").GetComponent<Text>().text = locked
                 ? selected.minRank.englishName + " required"
                 : string.IsNullOrEmpty(token) ? "Sign in to purchase" : "Profile unavailable";
@@ -343,8 +430,8 @@ namespace Kodimodi.UI.Profile
             states.Find("Owned").gameObject.SetActive(isOwned && !buying);
             states.Find("Spinner").gameObject.SetActive(buying);
             buy.gameObject.SetActive(selected != null && !isOwned && !locked && profile != null && !buying);
-            buy.transform.Find("Label").GetComponent<Text>().text = selected == null
-                ? "" : "BUY  " + FormatAmount(selected.price);
+            foreach (var card in cards)
+                RenderCard(card);
 
             back.interactable = !buying;
             foreach (var tab in tabs)

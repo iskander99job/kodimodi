@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ff64efb420b4547adc8c647f6406a06, type: 3}
+  m_Name: ShopRankIcons
+  m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.ShopRankIcons
+  entries:
+  - code: private
+    icon: {fileID: -102479012, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: corporal
+    icon: {fileID: -913551658, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: junior_sergeant
+    icon: {fileID: -1304603239, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: sergeant
+    icon: {fileID: 1837258727, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: senior_sergeant
+    icon: {fileID: 720489823, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: sergeant_major
+    icon: {fileID: -1312037408, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: warrant_officer
+    icon: {fileID: -1948402961, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: senior_warrant_officer
+    icon: {fileID: 1337091521, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: junior_lieutenant
+    icon: {fileID: -293952666, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: lieutenant
+    icon: {fileID: 436926331, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: senior_lieutenant
+    icon: {fileID: -86566163, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: captain
+    icon: {fileID: -299941577, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: major
+    icon: {fileID: 1455404294, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: lieutenant_colonel
+    icon: {fileID: -1772668217, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: colonel
+    icon: {fileID: -53559025, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: major_general
+    icon: {fileID: -729892819, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: lieutenant_general
+    icon: {fileID: -1753350598, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: ace
+    icon: {fileID: -47599564, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
+  - code: god
+    icon: {fileID: 75451139, guid: 5958ad3676c964a9aa1aeb498e18f196, type: 3}
