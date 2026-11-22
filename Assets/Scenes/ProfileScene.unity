@@ -3820,7 +3820,6 @@ GameObject:
   - component: {fileID: 198781882}
   - component: {fileID: 198781885}
   - component: {fileID: 198781884}
-  - component: {fileID: 198781883}
   m_Layer: 5
   m_Name: ConsentText
   m_TagString: Untagged
@@ -3847,18 +3846,6 @@ RectTransform:
   m_AnchoredPosition: {x: 54, y: -0}
   m_SizeDelta: {x: 652, y: 42}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &198781883
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 198781881}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 238c162df6a24b389bc584329b51515f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ConsentTextClick
 --- !u!114 &198781884
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13824,7 +13811,6 @@ GameObject:
   - component: {fileID: 810091102}
   - component: {fileID: 810091105}
   - component: {fileID: 810091104}
-  - component: {fileID: 810091103}
   - component: {fileID: 810091106}
   m_Layer: 5
   m_Name: ConsentText
@@ -13852,18 +13838,6 @@ RectTransform:
   m_AnchoredPosition: {x: 54, y: -0}
   m_SizeDelta: {x: 652, y: 42}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &810091103
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 810091101}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 238c162df6a24b389bc584329b51515f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ConsentTextClick
 --- !u!114 &810091104
 MonoBehaviour:
   m_ObjectHideFlags: 0
