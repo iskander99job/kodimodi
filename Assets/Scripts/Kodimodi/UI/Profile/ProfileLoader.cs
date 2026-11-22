@@ -28,6 +28,7 @@ namespace Kodimodi.UI.Profile
         private string sessionAccessToken;
         private bool isLoading;
         private static (string ApiUrl, string Token) shopSession;
+        internal static bool UseRussianInventoryStats { get; private set; }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -111,6 +112,7 @@ namespace Kodimodi.UI.Profile
                 return;
 
             shopSession = (sessionApiBaseUrl, sessionAccessToken);
+            UseRussianInventoryStats = profileRank.CurrentLanguage == ProfileRankController.Language.Russian;
             SceneManager.LoadScene(sceneName);
         }
 

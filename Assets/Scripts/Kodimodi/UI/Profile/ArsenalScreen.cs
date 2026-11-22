@@ -25,7 +25,10 @@ namespace Kodimodi.UI.Profile
         private readonly List<(Button Button, ArsenalWeapon Weapon)> cards = new();
         private ArsenalWeapon[] weapons = Array.Empty<ArsenalWeapon>();
 
+        [SerializeField] private WeaponStatCatalog statCatalog;
+
         private Transform page;
+        private WeaponStatsView statsView;
         private Transform compactBar;
         private Transform fullBar;
         private Transform states;
@@ -55,13 +58,13 @@ namespace Kodimodi.UI.Profile
         }
 
         [Serializable] private sealed class Profile { public int coins; }
-        [Serializable] private sealed class Details { public Stat[] stats; }
-        [Serializable] private sealed class Stat { public string statCode; public int value; }
+        [Serializable] private sealed class Details { public WeaponStatValue[] stats; }
 
         private void Awake()
         {
             var pages = transform.Find("Category Pages");
             page = pages.Find("PISTOL Page");
+            statsView = new WeaponStatsView(page, statCatalog, ProfileLoader.UseRussianInventoryStats);
             foreach (Transform child in pages)
                 child.gameObject.SetActive(child == page);
 
@@ -90,7 +93,7 @@ namespace Kodimodi.UI.Profile
             message = Instantiate(pages.Find("AR Page/Empty Message"), page).GetComponent<Text>();
             message.gameObject.SetActive(false);
             RenderSelection();
-            RenderStats(null);
+            statsView.Render(null);
         }
 
         private void Start()
@@ -148,6 +151,10 @@ namespace Kodimodi.UI.Profile
             var response = ArsenalApi.ReadResponse(request);
             inventoryLoaded = response?.weapons != null;
             weapons = response?.weapons ?? Array.Empty<ArsenalWeapon>();
+            if (selected != null)
+                selected = Array.Find(weapons, item => item != null && Matches(item.code, selected.code));
+            if (selected == null)
+                statsView.Render(null);
             spinner.SetActive(false);
             SetBusy(false);
 
@@ -213,7 +220,10 @@ namespace Kodimodi.UI.Profile
 
             var entry = cards.Find(card => Matches(card.Weapon.code, preferredCode) ||
                 (preferredCode == null && card.Weapon.equipped));
-            Select(entry.Weapon ?? (cards.Count > 0 ? cards[0].Weapon : null));
+            if (cards.Count > 0)
+                Select(entry.Weapon ?? cards[0].Weapon);
+            else
+                RenderSelection();
             SetMessage(cards.Count == 0 ? "No weapons owned" : null);
             Canvas.ForceUpdateCanvases();
             scroll.StopMovement();
@@ -228,7 +238,7 @@ namespace Kodimodi.UI.Profile
             CancelDetails();
             selected = weapon;
             RenderSelection();
-            RenderStats(null);
+            statsView.Render(null);
             if (weapon != null)
                 detailRequest = StartCoroutine(LoadDetails(weapon));
         }
@@ -242,7 +252,7 @@ namespace Kodimodi.UI.Profile
             activeDetails = null;
             detailRequest = null;
             using (request)
-                RenderStats(ReadSuccess<Details>(request)?.stats);
+                statsView.Render(ReadSuccess<Details>(request)?.stats);
         }
 
         private void CancelDetails()
@@ -338,26 +348,9 @@ namespace Kodimodi.UI.Profile
             replacementHint.gameObject.SetActive(current != null);
             if (current != null)
             {
-                var tab = Array.Find(Categories, entry => entry.Code == category);
+                var tab = Array.Find(Categories, entry => Matches(entry.Code, selected.categoryCode));
                 replacementHint.text = $"Replaces {current.name} in the {tab.Tab} slot";
             }
-        }
-
-        private void RenderStats(Stat[] stats)
-        {
-            RenderStat(stats, "DAMAGE", "DAMAGE");
-            RenderStat(stats, "FIRE RATE", "FIRE_RATE");
-            RenderStat(stats, "MAGAZINE", "MAGAZINE_SIZE");
-            RenderStat(stats, "RELOAD", "RELOAD");
-        }
-
-        private void RenderStat(Stat[] stats, string rowName, string code)
-        {
-            var row = page.Find(rowName);
-            var stat = stats == null ? null : Array.Find(stats, item => item?.statCode == code);
-            row.gameObject.SetActive(stat != null);
-            if (stat != null)
-                row.Find("Value").GetComponent<Text>().text = stat.value.ToString(CultureInfo.InvariantCulture);
         }
 
         private void SetBusy(bool value)

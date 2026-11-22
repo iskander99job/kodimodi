@@ -29,7 +29,10 @@ namespace Kodimodi.UI.Profile
         private readonly HashSet<string> owned = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<(Button Button, GameObject Selected, string Code)> tabs = new();
 
+        [SerializeField] private WeaponStatCatalog statCatalog;
+
         private Transform page;
+        private WeaponStatsView statsView;
         private GameObject categoryBar;
         private GameObject categoryPages;
         private GameObject loadingSpinner;
@@ -70,7 +73,6 @@ namespace Kodimodi.UI.Profile
             public string englishName;
             public int minXp;
         }
-        [Serializable] private sealed class Stat { public string statCode; public int value; }
         [Serializable] private sealed class Purchase
         {
             public string code;
@@ -85,7 +87,7 @@ namespace Kodimodi.UI.Profile
             public string name;
             public int price;
             public Rank minRank;
-            public Stat[] stats;
+            public WeaponStatValue[] stats;
         }
 
         private sealed class WeaponCard
@@ -103,6 +105,7 @@ namespace Kodimodi.UI.Profile
             var pages = transform.Find("Category Pages");
             categoryPages = pages.gameObject;
             page = pages.Find("PISTOL Page");
+            statsView = new WeaponStatsView(page, statCatalog, ProfileLoader.UseRussianInventoryStats);
             foreach (Transform child in pages)
                 child.gameObject.SetActive(child == page);
 
@@ -176,8 +179,6 @@ namespace Kodimodi.UI.Profile
             }
 
             cards.Clear();
-            selected = null;
-            selectedCode = null;
             RenderSelection();
             SetMessage(null);
             BeginLoad();
@@ -229,7 +230,10 @@ namespace Kodimodi.UI.Profile
 
             SetMessage(first == null ? "No weapons in this category." : null);
             if (first == null)
+            {
+                RenderSelection();
                 FinishLoad();
+            }
             else
                 yield return LoadDetails(first);
 
@@ -343,20 +347,20 @@ namespace Kodimodi.UI.Profile
 
         private IEnumerator LoadDetails(Weapon weapon)
         {
-            selected = null;
+            Weapon details = null;
             selectedCode = weapon.code;
-            RenderSelection();
 
             yield return Send(
                 UnityWebRequest.Get(apiBaseUrl + "/weapons/" + Uri.EscapeDataString(weapon.code)),
-                request => selected = ReadSuccess<Weapon>(request));
+                request => details = ReadSuccess<Weapon>(request));
 
-            if (selected == null)
+            if (details == null)
             {
                 ShowLoadError("Couldn't load weapon details. Please try again.", () => SelectWeapon(weapon));
                 yield break;
             }
 
+            selected = details;
             selected.code = weapon.code;
             RenderSelection();
             FinishLoad();
@@ -430,10 +434,7 @@ namespace Kodimodi.UI.Profile
         {
             page.Find("Weapon Name").GetComponent<Text>().text = selected?.name ?? "";
             RenderIcon(page.Find("Weapon Preview").GetComponent<Image>(), selected?.code);
-            RenderStat("DAMAGE", "DAMAGE");
-            RenderStat("FIRE RATE", "FIRE_RATE");
-            RenderStat("MAGAZINE", "MAGAZINE_SIZE");
-            RenderStat("RELOAD", "RELOAD");
+            statsView.Render(selected?.stats);
 
             bool isOwned = selected != null && owned.Contains(selected.code);
             bool locked = IsRankLocked(selected);
@@ -456,16 +457,6 @@ namespace Kodimodi.UI.Profile
             back.interactable = !buying;
             foreach (var tab in tabs)
                 tab.Button.interactable = !buying;
-        }
-
-        private void RenderStat(string rowName, string code)
-        {
-            var row = page.Find(rowName);
-            var stat = selected?.stats == null
-                ? null : Array.Find(selected.stats, item => item?.statCode == code);
-            row.gameObject.SetActive(stat != null);
-            if (stat != null)
-                row.Find("Value").GetComponent<Text>().text = stat.value.ToString(CultureInfo.InvariantCulture);
         }
 
         private void RenderIcon(Image image, string code)
