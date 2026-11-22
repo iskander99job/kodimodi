@@ -52,6 +52,7 @@ namespace Kodimodi.UI.Profile
         private GameObject balancePanel;
         private Text message;
         private string token;
+        private string guestStarterCode;
         private string category;
         private Weapon selected;
         private string selectedCode;
@@ -206,6 +207,25 @@ namespace Kodimodi.UI.Profile
                 }
             }
 
+            if (string.IsNullOrEmpty(token) && guestStarterCode == null)
+            {
+                yield return Send(UnityWebRequest.Get(apiBaseUrl + "/weapons/starter"),
+                    request => guestStarterCode = ReadSuccess<ArsenalWeapon>(request)?.code);
+
+                if (string.IsNullOrWhiteSpace(guestStarterCode))
+                {
+                    guestStarterCode = null;
+                    ShowLoadError("Couldn't load the shop. Please try again.", retry);
+                    yield break;
+                }
+
+                if (IsGuestStarter(selected?.code))
+                {
+                    selected = null;
+                    selectedCode = null;
+                }
+            }
+
             Catalog catalog = null;
             yield return Send(UnityWebRequest.Get(apiBaseUrl + "/weapons"),
                 request => catalog = ReadSuccess<Catalog>(request));
@@ -221,7 +241,7 @@ namespace Kodimodi.UI.Profile
             bool hasUnownedWeapons = false;
             foreach (var weapon in catalog.weapons)
             {
-                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code))
+                if (weapon == null || string.IsNullOrWhiteSpace(weapon.code) || IsGuestStarter(weapon.code))
                     continue;
 
                 hasCatalogWeapons = true;
@@ -253,6 +273,12 @@ namespace Kodimodi.UI.Profile
 
             if (categoryPages.activeSelf)
                 ResetScroll();
+        }
+
+        private bool IsGuestStarter(string code)
+        {
+            return guestStarterCode != null && string.IsNullOrEmpty(token) &&
+                string.Equals(guestStarterCode, code, StringComparison.OrdinalIgnoreCase);
         }
 
         private void CreateCard(Weapon weapon)
