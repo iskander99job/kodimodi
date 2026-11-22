@@ -23,6 +23,7 @@ namespace Kodimodi.UI.Profile
         private GameObject signInButton;
         private GameObject exitButton;
         private GameObject balancePanel;
+        private GameObject addCurrencyButton;
         private TMP_Text balanceText;
         private string sessionApiBaseUrl;
         private string sessionAccessToken;
@@ -70,6 +71,7 @@ namespace Kodimodi.UI.Profile
             exitButton = FindRequired<Transform>(rightTopBlock, "ExitButton").gameObject;
             balancePanel = FindRequired<Transform>(rightTopBlock, "BalancePanel").gameObject;
             balanceText = FindRequired<TMP_Text>(rightTopBlock, "BalancePanel/BalanceText");
+            addCurrencyButton = FindRequired<Transform>(rightTopBlock, "BalancePanel/AddCurrencyButton").gameObject;
 
             profileObjects = new[]
             {
@@ -360,6 +362,7 @@ namespace Kodimodi.UI.Profile
             signInButton.SetActive(!signedIn);
             exitButton.SetActive(signedIn);
             balancePanel.SetActive(signedIn);
+            addCurrencyButton.SetActive(signedIn);
         }
 
         private static ProfileResponse ReadProfile(string json)

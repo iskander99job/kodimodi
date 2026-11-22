@@ -1849,6 +1849,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000004}
   - component: {fileID: 900000005}
+  - component: {fileID: 900000006}
   m_Layer: 5
   m_Name: Coin Packs Heading
   m_TagString: Untagged
@@ -2183,6 +2184,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000017}
   - component: {fileID: 900000018}
+  - component: {fileID: 900000019}
   m_Layer: 5
   m_Name: Amount
   m_TagString: Untagged
@@ -2319,6 +2321,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000021}
   - component: {fileID: 900000022}
+  - component: {fileID: 900000023}
   m_Layer: 5
   m_Name: Price
   m_TagString: Untagged
@@ -2653,6 +2656,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000034}
   - component: {fileID: 900000035}
+  - component: {fileID: 900000036}
   m_Layer: 5
   m_Name: Amount
   m_TagString: Untagged
@@ -2789,6 +2793,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000038}
   - component: {fileID: 900000039}
+  - component: {fileID: 900000040}
   m_Layer: 5
   m_Name: Price
   m_TagString: Untagged
@@ -3123,6 +3128,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000051}
   - component: {fileID: 900000052}
+  - component: {fileID: 900000053}
   m_Layer: 5
   m_Name: Amount
   m_TagString: Untagged
@@ -3259,6 +3265,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000055}
   - component: {fileID: 900000056}
+  - component: {fileID: 900000057}
   m_Layer: 5
   m_Name: Price
   m_TagString: Untagged
@@ -3593,6 +3600,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000068}
   - component: {fileID: 900000069}
+  - component: {fileID: 900000070}
   m_Layer: 5
   m_Name: Amount
   m_TagString: Untagged
@@ -3729,6 +3737,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000072}
   - component: {fileID: 900000073}
+  - component: {fileID: 900000074}
   m_Layer: 5
   m_Name: Price
   m_TagString: Untagged
@@ -3865,6 +3874,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000076}
   - component: {fileID: 900000077}
+  - component: {fileID: 900000078}
   m_Layer: 5
   m_Name: Payment Method Heading
   m_TagString: Untagged
@@ -4200,6 +4210,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000089}
   - component: {fileID: 900000090}
+  - component: {fileID: 900000091}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -4685,6 +4696,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000110}
   - component: {fileID: 900000111}
+  - component: {fileID: 900000112}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -5170,6 +5182,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000131}
   - component: {fileID: 900000132}
+  - component: {fileID: 900000133}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -5531,6 +5544,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000147}
   - component: {fileID: 900000148}
+  - component: {fileID: 900000149}
   m_Layer: 5
   m_Name: Summary Amount
   m_TagString: Untagged
@@ -5667,6 +5681,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000151}
   - component: {fileID: 900000152}
+  - component: {fileID: 900000153}
   m_Layer: 5
   m_Name: Summary Total
   m_TagString: Untagged
@@ -5924,6 +5939,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000160}
   - component: {fileID: 900000161}
+  - component: {fileID: 900000162}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -6060,6 +6076,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000164}
   - component: {fileID: 900000165}
+  - component: {fileID: 900000166}
   m_Layer: 5
   m_Name: Payment Status
   m_TagString: Untagged
