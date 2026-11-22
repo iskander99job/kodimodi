@@ -17,15 +17,11 @@ namespace Kodimodi.UI.Profile
             (500, 1.99m), (1200, 3.99m), (2800, 7.99m), (6000, 14.99m)
         };
 
-        private static readonly Color ActiveRadio = new Color32(255, 166, 0, 255);
-        private static readonly Color InactiveRadio = new Color32(171, 173, 176, 255);
 
         [SerializeField] private Sprite normalPanel;
         [SerializeField] private Sprite selectedPanel;
         [SerializeField] private Button[] packButtons;
         [SerializeField] private Button[] methodButtons;
-        [SerializeField] private Image[] methodRings;
-        [SerializeField] private Image[] methodDots;
         [SerializeField] private TMP_Text summaryAmount;
         [SerializeField] private TMP_Text summaryTotal;
         [SerializeField] private Button payButton;
@@ -138,8 +134,6 @@ namespace Kodimodi.UI.Profile
             {
                 bool selected = i == selectedMethod;
                 methodButtons[i].image.sprite = selected ? selectedPanel : normalPanel;
-                methodRings[i].color = selected ? ActiveRadio : InactiveRadio;
-                methodDots[i].gameObject.SetActive(selected);
             }
 
             var pack = Packs[selectedPack];
