@@ -85,6 +85,8 @@ namespace Kodimodi.UI.Profile
             back.OnClick.AddListener(() => SceneManager.LoadScene("ProfileScene"));
             balancePanel = transform.Find("Header/BalancePanel").gameObject;
             balance = balancePanel.transform.Find("BalanceText").GetComponent<TMP_Text>();
+            balancePanel.transform.Find("AddCurrencyButton").GetComponent<LeanButton>()
+                .OnClick.AddListener(CoinShopScreen.Open);
             balancePanel.SetActive(false);
 
             spinner = transform.Find("Spinner").gameObject;

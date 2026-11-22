@@ -106,14 +106,28 @@ namespace Kodimodi.UI.Profile
 
         public void OpenArsenal() => OpenInventoryScene("ArsenalScene");
 
+        public void OpenCoinShop()
+        {
+            if (isLoading || string.IsNullOrEmpty(sessionAccessToken))
+                return;
+
+            RememberInventorySession();
+            CoinShopScreen.Open();
+        }
+
         private void OpenInventoryScene(string sceneName)
         {
             if (isLoading)
                 return;
 
+            RememberInventorySession();
+            SceneManager.LoadScene(sceneName);
+        }
+
+        private void RememberInventorySession()
+        {
             shopSession = (sessionApiBaseUrl, sessionAccessToken);
             UseRussianInventoryStats = profileRank.CurrentLanguage == ProfileRankController.Language.Russian;
-            SceneManager.LoadScene(sceneName);
         }
 
         internal static bool TryGetShopSession(out string apiBaseUrl, out string token)

@@ -139,8 +139,9 @@ namespace Kodimodi.UI.Profile
             back.OnClick.AddListener(ReturnToProfile);
             balancePanel = transform.Find("Header/BalancePanel").gameObject;
             balance = balancePanel.transform.Find("BalanceText").GetComponent<TMP_Text>();
+            balancePanel.transform.Find("AddCurrencyButton").GetComponent<LeanButton>()
+                .OnClick.AddListener(CoinShopScreen.Open);
             balancePanel.SetActive(false);
-            transform.Find("Header/BalancePanel/AddCurrencyButton").gameObject.SetActive(false);
             loadingSpinner = transform.Find("Spinner").gameObject;
             loadingSpinner.SetActive(false);
             CreateLoadError();
