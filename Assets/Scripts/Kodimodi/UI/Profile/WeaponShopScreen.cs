@@ -21,7 +21,7 @@ namespace Kodimodi.UI.Profile
         };
 
         [SerializeField] private string apiBaseUrl = "http://localhost:5028";
-        [SerializeField] private WeaponIcon[] weaponIcons = Array.Empty<WeaponIcon>();
+        [SerializeField] private WeaponAssetsCatalog weaponAssets;
 
         [SerializeField] private ShopRankIcons rankIcons;
 
@@ -49,6 +49,7 @@ namespace Kodimodi.UI.Profile
         private LeanButton buy;
         private LeanButton viewInArsenal;
         private TMP_Text balance;
+        private GameObject balancePanel;
         private Text message;
         private string token;
         private string category;
@@ -58,13 +59,6 @@ namespace Kodimodi.UI.Profile
         private bool buying;
         private UnityWebRequest activeRequest;
         private Coroutine pending;
-
-        [Serializable]
-        private struct WeaponIcon
-        {
-            public string code;
-            public Sprite sprite;
-        }
 
         [Serializable] private sealed class Catalog { public Weapon[] weapons; }
         [Serializable] private sealed class RankProfile { public int coins; public int xp; }
@@ -142,7 +136,9 @@ namespace Kodimodi.UI.Profile
             buy.transform.Find("Coin Icon").gameObject.SetActive(false);
             back = transform.Find("Header/Back").GetComponent<LeanButton>();
             back.OnClick.AddListener(ReturnToProfile);
-            balance = transform.Find("Header/BalancePanel/BalanceText").GetComponent<TMP_Text>();
+            balancePanel = transform.Find("Header/BalancePanel").gameObject;
+            balance = balancePanel.transform.Find("BalanceText").GetComponent<TMP_Text>();
+            balancePanel.SetActive(false);
             transform.Find("Header/BalancePanel/AddCurrencyButton").gameObject.SetActive(false);
             loadingSpinner = transform.Find("Spinner").gameObject;
             loadingSpinner.SetActive(false);
@@ -203,7 +199,7 @@ namespace Kodimodi.UI.Profile
             {
                 bool loaded = false;
                 yield return LoadAccount(() => loaded = true);
-                if (!loaded)
+                if (!loaded && !string.IsNullOrEmpty(token))
                 {
                     ShowLoadError("Couldn't load the shop. Please try again.", retry);
                     yield break;
@@ -329,7 +325,7 @@ namespace Kodimodi.UI.Profile
             {
                 profile = ReadSuccess<RankProfile>(result);
                 if (result.responseCode == 401)
-                    token = null;
+                    ClearRejectedSession();
             });
             UpdateBalance();
 
@@ -338,6 +334,9 @@ namespace Kodimodi.UI.Profile
 
             yield return Send(ArsenalApi.CreateRequest(apiBaseUrl, token), result =>
             {
+                if (result.responseCode == 401)
+                    ClearRejectedSession();
+
                 var arsenal = ArsenalApi.ReadResponse(result);
                 if (arsenal?.weapons == null)
                     return;
@@ -427,12 +426,7 @@ namespace Kodimodi.UI.Profile
                         ? WeaponPurchaseErrors.SignInRequired
                         : WeaponPurchaseErrors.GetMessage(purchase?.error);
                     if (result.responseCode == 401)
-                    {
-                        token = null;
-                        profile = null;
-                        owned.Clear();
-                        UpdateBalance();
-                    }
+                        ClearRejectedSession();
 
                     refresh = result.result is UnityWebRequest.Result.ConnectionError
                         or UnityWebRequest.Result.DataProcessingError;
@@ -486,15 +480,25 @@ namespace Kodimodi.UI.Profile
 
         private void RenderIcon(Image image, string code)
         {
-            var icon = code == null ? default : Array.Find(weaponIcons,
-                item => string.Equals(item.code, code, StringComparison.OrdinalIgnoreCase));
-            image.sprite = icon.sprite;
-            image.enabled = icon.sprite != null;
+            var icon = weaponAssets?.GetIcon(code);
+            image.sprite = icon;
+            image.enabled = icon != null;
+        }
+
+        private void ClearRejectedSession()
+        {
+            token = null;
+            profile = null;
+            owned.Clear();
+            ProfileLoader.ClearInventorySession();
+            UpdateBalance();
         }
 
         private void UpdateBalance()
         {
-            balance.text = profile == null ? "—" : FormatAmount(profile.coins);
+            balancePanel.SetActive(profile != null && !string.IsNullOrEmpty(token));
+            if (profile != null)
+                balance.text = FormatAmount(profile.coins);
         }
 
         private static string FormatAmount(int amount)

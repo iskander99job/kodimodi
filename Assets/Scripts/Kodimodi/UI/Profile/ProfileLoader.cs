@@ -129,6 +129,17 @@ namespace Kodimodi.UI.Profile
 #endif
         }
 
+        internal static void ClearInventorySession()
+        {
+            shopSession = default;
+#if UNITY_EDITOR
+            EditorAuthSession.Clear();
+#endif
+#if UNITY_WEBGL && !UNITY_EDITOR
+            Kodimodi_ClearAccessToken();
+#endif
+        }
+
         public void Load(string apiBaseUrl, string accessToken)
         {
             if (isLoading)

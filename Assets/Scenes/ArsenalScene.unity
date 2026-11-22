@@ -5914,7 +5914,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aade3e500b5d460fbb8d0118d2207cda, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.ArsenalScreen
-  weaponIcons: []
+  weaponAssets: {fileID: 11400000, guid: 583c0274355f429981839c58835e56e9, type: 2}
   statCatalog: {fileID: 11400000, guid: 138e7b4f89df4222920213b60f1d93d8, type: 2}
 --- !u!224 &866319892
 RectTransform:

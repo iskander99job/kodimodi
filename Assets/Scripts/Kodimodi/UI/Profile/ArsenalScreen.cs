@@ -13,7 +13,8 @@ namespace Kodimodi.UI.Profile
 {
     public sealed class ArsenalScreen : MonoBehaviour
     {
-        [SerializeField] private WeaponIcon[] weaponIcons = Array.Empty<WeaponIcon>();
+        [SerializeField] private string guestApiBaseUrl = "http://localhost:5028";
+        [SerializeField] private WeaponAssetsCatalog weaponAssets;
 
         private static readonly (string Tab, string Code)[] Categories =
         {
@@ -39,6 +40,7 @@ namespace Kodimodi.UI.Profile
         private Text replacementHint;
         private Text message;
         private TMP_Text balance;
+        private GameObject balancePanel;
         private ScrollRect scroll;
         private Button template;
         private string category = "AR";
@@ -49,13 +51,6 @@ namespace Kodimodi.UI.Profile
         private bool inventoryLoaded;
         private Coroutine detailRequest;
         private UnityWebRequest activeDetails;
-
-        [Serializable]
-        private struct WeaponIcon
-        {
-            public string code;
-            public Sprite sprite;
-        }
 
         [Serializable] private sealed class Profile { public int coins; }
         [Serializable] private sealed class Details { public WeaponStatValue[] stats; }
@@ -88,8 +83,9 @@ namespace Kodimodi.UI.Profile
             replacementHint = canEquip.transform.Find("Replacement Hint").GetComponent<Text>();
             back = transform.Find("Header/Back").GetComponent<LeanButton>();
             back.OnClick.AddListener(() => SceneManager.LoadScene("ProfileScene"));
-            balance = transform.Find("Header/BalancePanel/BalanceText").GetComponent<TMP_Text>();
-            balance.text = "—";
+            balancePanel = transform.Find("Header/BalancePanel").gameObject;
+            balance = balancePanel.transform.Find("BalanceText").GetComponent<TMP_Text>();
+            balancePanel.SetActive(false);
 
             spinner = transform.Find("Spinner").gameObject;
             scroll = page.Find("Weapon Scroll View").GetComponent<ScrollRect>();
@@ -110,14 +106,9 @@ namespace Kodimodi.UI.Profile
             weaponToOpen = null;
 
             if (!ProfileLoader.TryGetShopSession(out apiBaseUrl, out token))
-            {
-                spinner.SetActive(false);
-                SetMessage(ArsenalApi.SignInRequired);
-                return;
-            }
+                apiBaseUrl = guestApiBaseUrl.Trim().TrimEnd('/');
 
             StartCoroutine(Load(preferredCode, selectFirstOwnedCategory: true));
-            StartCoroutine(LoadBalance());
         }
 
         private void OnDisable()
@@ -137,7 +128,7 @@ namespace Kodimodi.UI.Profile
                 tabs.Add((button, tab.Find("Selected").gameObject, code));
                 button.onClick.AddListener(() =>
                 {
-                    if (busy || string.IsNullOrEmpty(token))
+                    if (busy)
                         return;
 
                     category = code;
@@ -157,9 +148,34 @@ namespace Kodimodi.UI.Profile
             spinner.SetActive(true);
             SetMessage(null);
 
-            using var request = ArsenalApi.CreateRequest(apiBaseUrl, token);
-            yield return Send(request);
-            var response = ArsenalApi.ReadResponse(request);
+            ArsenalResponse response = null;
+            if (!string.IsNullOrEmpty(token))
+                yield return LoadBalance();
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                using var request = ArsenalApi.CreateRequest(apiBaseUrl, token);
+                yield return Send(request);
+                if (request.responseCode == 401)
+                    ClearRejectedSession();
+                else
+                    response = ArsenalApi.ReadResponse(request);
+            }
+
+            if (string.IsNullOrEmpty(token))
+            {
+                using var request = UnityWebRequest.Get(apiBaseUrl + "/weapons/starter");
+                request.timeout = 15;
+                yield return Send(request);
+                var starter = ReadSuccess<ArsenalWeapon>(request);
+                if (starter != null && !string.IsNullOrWhiteSpace(starter.code) &&
+                    !string.IsNullOrWhiteSpace(starter.categoryCode))
+                {
+                    starter.equipped = true;
+                    response = new ArsenalResponse { weapons = new[] { starter } };
+                }
+            }
+
             inventoryLoaded = response?.weapons != null;
             weapons = response?.weapons ?? Array.Empty<ArsenalWeapon>();
             if (selected != null)
@@ -196,7 +212,14 @@ namespace Kodimodi.UI.Profile
 
             RenderCategory(preferredCode);
             if (response?.weapons == null)
-                SetMessage(request.responseCode == 401 ? ArsenalApi.SignInRequired : ArsenalApi.LoadFailed);
+                SetMessage(ArsenalApi.LoadFailed);
+        }
+
+        private void ClearRejectedSession()
+        {
+            token = null;
+            balancePanel.SetActive(false);
+            ProfileLoader.ClearInventorySession();
         }
 
         private IEnumerator LoadBalance()
@@ -205,7 +228,11 @@ namespace Kodimodi.UI.Profile
             request.SetRequestHeader("Authorization", "Bearer " + token);
             request.timeout = 15;
             yield return Send(request);
+            if (request.responseCode == 401)
+                ClearRejectedSession();
+
             var profile = ReadSuccess<Profile>(request);
+            balancePanel.SetActive(profile != null);
             if (profile != null)
                 balance.text = profile.coins.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');
         }
@@ -294,7 +321,7 @@ namespace Kodimodi.UI.Profile
 
         private void Equip()
         {
-            if (!busy && selected != null && !selected.equipped)
+            if (!busy && !string.IsNullOrEmpty(token) && selected != null && !selected.equipped)
                 StartCoroutine(EquipSelected(selected));
         }
 
@@ -316,6 +343,8 @@ namespace Kodimodi.UI.Profile
                     error = request.responseCode == 401
                         ? ArsenalApi.SignInRequired
                         : ArsenalApi.GetEquipError(result?.error);
+                    if (request.responseCode == 401)
+                        ClearRejectedSession();
                     result = null;
                 }
                 else
@@ -359,7 +388,7 @@ namespace Kodimodi.UI.Profile
                 button.transform.Find("Equipped Badge").gameObject.SetActive(weapon.equipped);
             }
 
-            canEquip.SetActive(!busy && selected != null && !selected.equipped);
+            canEquip.SetActive(!busy && !string.IsNullOrEmpty(token) && selected != null && !selected.equipped);
             states.Find("Equipped").gameObject.SetActive(!busy && selected?.equipped == true);
             states.Find("Spinner").gameObject.SetActive(busy && selected != null);
 
@@ -390,9 +419,9 @@ namespace Kodimodi.UI.Profile
 
         private void SetIcon(Image image, string code)
         {
-            var icon = code == null ? default : Array.Find(weaponIcons, entry => Matches(entry.code, code));
-            image.sprite = icon.sprite;
-            image.enabled = icon.sprite != null;
+            var icon = weaponAssets?.GetIcon(code);
+            image.sprite = icon;
+            image.enabled = icon != null;
         }
 
         private static bool Matches(string first, string second) =>
