@@ -19200,9 +19200,9 @@ MonoBehaviour:
   onClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Kodimodi.UI.Profile.WeaponShop, Assembly-CSharp
-        m_MethodName: Open
+      - m_Target: {fileID: 107482289}
+        m_TargetAssemblyTypeName: Kodimodi.UI.Profile.ProfileLoader, Assembly-CSharp
+        m_MethodName: OpenWeaponShop
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

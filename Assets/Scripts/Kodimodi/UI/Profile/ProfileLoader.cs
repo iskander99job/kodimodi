@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 namespace Kodimodi.UI.Profile
 {
@@ -26,6 +27,7 @@ namespace Kodimodi.UI.Profile
         private string sessionApiBaseUrl;
         private string sessionAccessToken;
         private bool isLoading;
+        private static (string ApiUrl, string Token) shopSession;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
@@ -80,16 +82,46 @@ namespace Kodimodi.UI.Profile
             SetSignedIn(false);
         }
 
-#if UNITY_EDITOR
         private void Start()
         {
-            if (!isLoading &&
-                EditorAuthSession.TryRead(out var apiBaseUrl, out var accessToken))
+            if (isLoading)
+                return;
+
+            var previousSession = shopSession;
+            shopSession = default;
+            if (!string.IsNullOrEmpty(previousSession.Token))
             {
-                StartCoroutine(LoadProfile(apiBaseUrl, accessToken));
+                StartCoroutine(LoadProfile(previousSession.ApiUrl, previousSession.Token));
+                return;
             }
-        }
+
+#if UNITY_EDITOR
+            if (EditorAuthSession.TryRead(out var apiBaseUrl, out var accessToken))
+                StartCoroutine(LoadProfile(apiBaseUrl, accessToken));
 #endif
+        }
+
+        public void OpenWeaponShop()
+        {
+            if (isLoading)
+                return;
+
+            shopSession = (sessionApiBaseUrl, sessionAccessToken);
+            SceneManager.LoadScene("WeaponShopScene");
+        }
+
+        internal static bool TryGetShopSession(out string apiBaseUrl, out string token)
+        {
+            (apiBaseUrl, token) = shopSession;
+            if (!string.IsNullOrEmpty(token))
+                return true;
+
+#if UNITY_EDITOR
+            return EditorAuthSession.TryRead(out apiBaseUrl, out token);
+#else
+            return false;
+#endif
+        }
 
         public void Load(string apiBaseUrl, string accessToken)
         {
