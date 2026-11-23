@@ -323,7 +323,11 @@ namespace Kodimodi.UI.Profile
             };
             cards.Add(card);
             RenderCard(card);
-            button.onClick.AddListener(() => SelectWeapon(weapon));
+            button.onClick.AddListener(() =>
+            {
+                if (!string.Equals(weapon.code, selectedCode, StringComparison.OrdinalIgnoreCase))
+                    SelectWeapon(weapon);
+            });
             button.gameObject.SetActive(true);
         }
 

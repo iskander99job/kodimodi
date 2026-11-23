@@ -287,7 +287,11 @@ namespace Kodimodi.UI.Profile
                 label.supportRichText = false;
                 label.text = weapon.name;
                 SetIcon(card.transform.Find("Thumbnail").GetComponent<Image>(), weapon.code);
-                card.onClick.AddListener(() => Select(weapon));
+                card.onClick.AddListener(() =>
+                {
+                    if (!ReferenceEquals(weapon, selected))
+                        Select(weapon);
+                });
                 cards.Add((card, weapon));
                 card.gameObject.SetActive(true);
             }
