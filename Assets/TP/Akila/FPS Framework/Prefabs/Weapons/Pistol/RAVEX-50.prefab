@@ -8591,7 +8591,7 @@ GameObject:
   - component: {fileID: 2528320879562704222}
   - component: {fileID: 3747876950009705044}
   m_Layer: 12
-  m_Name: Pistol_2
+  m_Name: RAVEX-50
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
