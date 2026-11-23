@@ -29,6 +29,11 @@ namespace Kodimodi.UI.Profile
         [SerializeField] private WeaponStatCatalog statCatalog;
 
         private Transform page;
+        private GameObject categoryBar;
+        private GameObject categoryPages;
+        private Text loadError;
+        private LeanButton retryButton;
+        private Action retryLoad;
         private WeaponStatsView statsView;
         private Transform compactBar;
         private Transform fullBar;
@@ -66,6 +71,8 @@ namespace Kodimodi.UI.Profile
         private void Awake()
         {
             var pages = transform.Find("Category Pages");
+            categoryPages = pages.gameObject;
+            categoryBar = transform.Find("Categories").gameObject;
             page = pages.Find("PISTOL Page");
             statsView = new WeaponStatsView(page, statCatalog, ProfileLoader.UseRussianInventoryStats);
             foreach (Transform child in pages)
@@ -79,7 +86,6 @@ namespace Kodimodi.UI.Profile
             states = page.Find("Equip States");
             canEquip = states.Find("Can Equip").gameObject;
             equip = canEquip.transform.Find("Equip Button").GetComponent<LeanButton>();
-            equip.OnClick.AddListener(Equip);
             replacementHint = canEquip.transform.Find("Replacement Hint").GetComponent<Text>();
             back = transform.Find("Header/Back").GetComponent<LeanButton>();
             back.OnClick.AddListener(() => SceneManager.LoadScene("ProfileScene"));
@@ -98,6 +104,8 @@ namespace Kodimodi.UI.Profile
 
             message = Instantiate(pages.Find("AR Page/Empty Message"), page).GetComponent<Text>();
             message.gameObject.SetActive(false);
+            CreateLoadError();
+            equip.OnClick.AddListener(Equip);
             RenderSelection();
             statsView.Render(null);
         }
@@ -145,14 +153,27 @@ namespace Kodimodi.UI.Profile
         private IEnumerator Load(string preferredCode = null, bool selectFirstOwnedCategory = false)
         {
             CancelDetails();
-            SetBusy(true);
-            RenderSelection();
-            spinner.SetActive(true);
+            BeginLoad();
             SetMessage(null);
+            Action retry = () => StartCoroutine(Load(preferredCode, selectFirstOwnedCategory));
+            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                ShowLoadError("The API address is invalid.", retry);
+                yield break;
+            }
 
             ArsenalResponse response = null;
             if (!string.IsNullOrEmpty(token))
-                yield return LoadBalance();
+            {
+                bool balanceLoaded = false;
+                yield return LoadBalance(loaded => balanceLoaded = loaded);
+                if (!balanceLoaded && !string.IsNullOrEmpty(token))
+                {
+                    ShowLoadError(ArsenalApi.LoadFailed, retry);
+                    yield break;
+                }
+            }
 
             if (!string.IsNullOrEmpty(token))
             {
@@ -179,13 +200,17 @@ namespace Kodimodi.UI.Profile
             }
 
             inventoryLoaded = response?.weapons != null;
-            weapons = response?.weapons ?? Array.Empty<ArsenalWeapon>();
+            if (!inventoryLoaded)
+            {
+                ShowLoadError(ArsenalApi.LoadFailed, retry);
+                yield break;
+            }
+            weapons = response.weapons;
             if (selected != null)
                 selected = Array.Find(weapons, item => item != null && Matches(item.code, selected.code));
             if (selected == null)
                 statsView.Render(null);
-            spinner.SetActive(false);
-            SetBusy(false);
+            FinishLoad();
 
             bool hasAdditionalCategories = Array.Exists(weapons, weapon =>
                 weapon != null && (Matches(weapon.categoryCode, "MG") || Matches(weapon.categoryCode, "SR")));
@@ -213,8 +238,6 @@ namespace Kodimodi.UI.Profile
             }
 
             RenderCategory(preferredCode);
-            if (response?.weapons == null)
-                SetMessage(ArsenalApi.LoadFailed);
         }
 
         private void ClearRejectedSession()
@@ -224,7 +247,7 @@ namespace Kodimodi.UI.Profile
             ProfileLoader.ClearInventorySession();
         }
 
-        private IEnumerator LoadBalance()
+        private IEnumerator LoadBalance(Action<bool> completed)
         {
             using var request = UnityWebRequest.Get(apiBaseUrl + "/profile");
             request.SetRequestHeader("Authorization", "Bearer " + token);
@@ -237,6 +260,7 @@ namespace Kodimodi.UI.Profile
             balancePanel.SetActive(profile != null);
             if (profile != null)
                 balance.text = profile.coins.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');
+            completed(profile != null);
         }
 
         private void RenderCategory(string preferredCode)
@@ -268,6 +292,10 @@ namespace Kodimodi.UI.Profile
                 card.gameObject.SetActive(true);
             }
 
+            Canvas.ForceUpdateCanvases();
+            scroll.StopMovement();
+            scroll.verticalNormalizedPosition = 1f;
+
             var entry = cards.Find(card => Matches(card.Weapon.code, preferredCode) ||
                 (preferredCode == null && card.Weapon.equipped));
             if (cards.Count > 0)
@@ -275,9 +303,6 @@ namespace Kodimodi.UI.Profile
             else
                 RenderSelection();
             SetMessage(cards.Count == 0 ? "No weapons owned" : null);
-            Canvas.ForceUpdateCanvases();
-            scroll.StopMovement();
-            scroll.verticalNormalizedPosition = 1f;
         }
 
         private void Select(ArsenalWeapon weapon)
@@ -290,7 +315,10 @@ namespace Kodimodi.UI.Profile
             RenderSelection();
             statsView.Render(null);
             if (weapon != null)
+            {
+                BeginLoad();
                 detailRequest = StartCoroutine(LoadDetails(weapon));
+            }
         }
 
         private IEnumerator LoadDetails(ArsenalWeapon weapon)
@@ -301,8 +329,19 @@ namespace Kodimodi.UI.Profile
             yield return Send(request);
             activeDetails = null;
             detailRequest = null;
+            Details details;
             using (request)
-                statsView.Render(ReadSuccess<Details>(request)?.stats);
+                details = ReadSuccess<Details>(request);
+
+            if (details?.stats == null)
+            {
+                ShowLoadError("Couldn't load weapon details. Please try again.", () => Select(weapon));
+                yield break;
+            }
+
+            statsView.Render(details.stats);
+            FinishLoad();
+            RenderSelection();
         }
 
         private void CancelDetails()
@@ -357,13 +396,8 @@ namespace Kodimodi.UI.Profile
 
             if (result == null)
             {
-                // A lost response can follow a successful save on the server.
-                yield return Load(weapon.code);
-                if (selected != null && !selected.equipped && Matches(selected.code, weapon.code))
-                {
-                    replacementHint.text = error;
-                    replacementHint.gameObject.SetActive(true);
-                }
+                // Leave reloading the server state to Retry, since a failed response may follow a successful save.
+                ShowLoadError(error, () => StartCoroutine(Load(weapon.code)));
                 yield break;
             }
 
@@ -411,6 +445,61 @@ namespace Kodimodi.UI.Profile
             back.interactable = !value;
             foreach (var tab in tabs)
                 tab.Button.interactable = !value;
+        }
+
+        private void CreateLoadError()
+        {
+            loadError = Instantiate(message, transform, false);
+            loadError.name = "Load Error";
+            loadError.alignment = TextAnchor.MiddleCenter;
+            loadError.raycastTarget = false;
+            Center(loadError.rectTransform, new Vector2(640f, 48f), 24f);
+            loadError.gameObject.SetActive(false);
+
+            retryButton = Instantiate(equip, transform, false);
+            retryButton.name = "Retry";
+            retryButton.transform.Find("Label").GetComponent<Text>().text = "Retry";
+            retryButton.OnClick.AddListener(() => retryLoad?.Invoke());
+            Center((RectTransform)retryButton.transform, new Vector2(160f, 48f), -34f);
+            retryButton.gameObject.SetActive(false);
+        }
+
+        private static void Center(RectTransform rect, Vector2 size, float y)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(0f, y);
+        }
+
+        private void BeginLoad()
+        {
+            retryLoad = null;
+            loadError.gameObject.SetActive(false);
+            retryButton.gameObject.SetActive(false);
+            categoryBar.SetActive(false);
+            categoryPages.SetActive(false);
+            spinner.SetActive(true);
+            SetBusy(true);
+        }
+
+        private void FinishLoad()
+        {
+            spinner.SetActive(false);
+            categoryBar.SetActive(true);
+            categoryPages.SetActive(true);
+            SetBusy(false);
+        }
+
+        private void ShowLoadError(string error, Action retry)
+        {
+            spinner.SetActive(false);
+            categoryBar.SetActive(false);
+            categoryPages.SetActive(false);
+            SetBusy(false);
+            retryLoad = retry;
+            loadError.text = error;
+            loadError.gameObject.SetActive(true);
+            retryButton.gameObject.SetActive(true);
         }
 
         private void SetMessage(string text)
