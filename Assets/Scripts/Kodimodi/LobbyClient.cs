@@ -36,7 +36,6 @@ namespace Kodimodi
         private bool connected;
         private bool starting;
         private bool leaving;
-        private bool previewErrorShown;
 
         private int capacity;
         private int playerCount;
@@ -101,7 +100,6 @@ namespace Kodimodi
 
             starting = false;
             leaving = false;
-            previewErrorShown = false;
 
             UpdateLink(code);
 
@@ -122,10 +120,6 @@ namespace Kodimodi
             string status)
         {
             capacity = maxPlayers;
-
-            // После успешного ответа следующая ошибка
-            // снова сможет показать окно.
-            previewErrorShown = false;
 
             if (view != null)
             {
@@ -189,7 +183,6 @@ namespace Kodimodi
             leaving = false;
             playerCount = 0;
             finished = false;
-            previewErrorShown = false;
 
             UpdateLink(roomId);
 
@@ -694,7 +687,6 @@ namespace Kodimodi
             connected = false;
             starting = false;
             leaving = false;
-            previewErrorShown = false;
 
             capacity = 0;
             playerCount = 0;
