@@ -157,6 +157,15 @@ namespace Kodimodi.UI.Profile
 #endif
         }
 
+        internal static string GetBattleAccessToken()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return Kodimodi_ReadAccessToken();
+#else
+            return TryGetShopSession(out _, out var token) ? token : null;
+#endif
+        }
+
         internal static void ClearInventorySession()
         {
             shopSession = default;
