@@ -34,6 +34,9 @@ namespace Kodimodi.UI.Profile
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern int Kodimodi_ClearAccessToken();
+
+        [DllImport("__Internal")]
+        private static extern string Kodimodi_ReadAccessToken();
 #endif
 
         [Serializable]
@@ -100,6 +103,15 @@ namespace Kodimodi.UI.Profile
 
 #if UNITY_EDITOR
             if (EditorAuthSession.TryRead(out var apiBaseUrl, out var accessToken))
+                StartCoroutine(LoadProfile(apiBaseUrl, accessToken));
+#elif UNITY_WEBGL
+            var apiBaseUrl = FindAnyObjectByType<SignIn>(FindObjectsInactive.Include)?.ApiBaseUrl;
+            if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiUri) ||
+                (apiUri.Scheme != Uri.UriSchemeHttp && apiUri.Scheme != Uri.UriSchemeHttps))
+                return;
+
+            var accessToken = Kodimodi_ReadAccessToken();
+            if (!string.IsNullOrWhiteSpace(accessToken))
                 StartCoroutine(LoadProfile(apiBaseUrl, accessToken));
 #endif
         }

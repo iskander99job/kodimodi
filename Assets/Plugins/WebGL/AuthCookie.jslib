@@ -28,6 +28,31 @@ mergeInto(LibraryManager.library, {
         }
     },
 
+    Kodimodi_ReadAccessToken: function () {
+        try {
+            var name = "kodimodi_access_token=";
+            var cookie = document.cookie.split(";").map(function (item) {
+                return item.trim();
+            }).find(function (item) {
+                return item.indexOf(name) === 0;
+            });
+
+            if (!cookie) return 0;
+
+            var token = decodeURIComponent(cookie.substring(name.length));
+            if (!token) return 0;
+
+            var size = lengthBytesUTF8(token) + 1;
+            var buffer = _malloc(size);
+            if (!buffer) return 0;
+
+            stringToUTF8(token, buffer, size);
+            return buffer;
+        } catch (_) {
+            return 0;
+        }
+    },
+
     Kodimodi_ClearAccessToken: function () {
         try {
             var name = "kodimodi_access_token=";

@@ -17,6 +17,8 @@ namespace Kodimodi.UI.Profile
     {
         [SerializeField] private string apiBaseUrl = "http://localhost:5028";
 
+        internal string ApiBaseUrl => apiBaseUrl?.Trim().TrimEnd('/');
+
         private LeanWindow window;
         private SignUp signUp;
         private ProfileLoader profileLoader;
@@ -147,7 +149,7 @@ namespace Kodimodi.UI.Profile
                 return;
             }
 
-            string baseUrl = apiBaseUrl.Trim().TrimEnd('/');
+            string baseUrl = ApiBaseUrl;
 
             if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) ||
                 (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
