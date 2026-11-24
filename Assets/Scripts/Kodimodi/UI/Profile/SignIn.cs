@@ -89,6 +89,8 @@ namespace Kodimodi.UI.Profile
             nicknameInput.characterLimit = 15;
             passwordInput.contentType = TMP_InputField.ContentType.Password;
             passwordInput.characterLimit = 30;
+            nicknameInput.onValidateInput = AuthInputValidation.Nickname;
+            passwordInput.onValidateInput = AuthInputValidation.Password;
 
             SetSubmitting(false);
             ShowError(null);
