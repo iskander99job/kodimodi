@@ -16008,7 +16008,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.WeaponShopScreen
   apiBaseUrl: http://localhost:5028
   weaponAssets: {fileID: 11400000, guid: 583c0274355f429981839c58835e56e9, type: 2}
-  statCatalog: {fileID: 11400000, guid: 138e7b4f89df4222920213b60f1d93d8, type: 2}
+  categoryIcons: {fileID: 11400000, guid: ef5def4ae2204f9e937bccc9ef73157b, type: 2}
   rankIcons: {fileID: 11400000, guid: dc66beb4b2e94db29a2918af895ed29e, type: 2}
 --- !u!1 &1912815092
 GameObject:

@@ -16,17 +16,11 @@ namespace Kodimodi.UI.Profile
         [SerializeField] private string guestApiBaseUrl = "http://localhost:5028";
         [SerializeField] private WeaponAssetsCatalog weaponAssets;
 
-        private static readonly (string Tab, string Code)[] Categories =
-        {
-            ("AR", "AR"), ("PISTOL", "PST"), ("SMG", "SMG"),
-            ("SHOTGUN", "SG"), ("MG", "MG"), ("SR", "SR")
-        };
-
         private readonly List<(Button Button, GameObject Highlight, string Category)> tabs = new();
         private readonly List<(Button Button, ArsenalWeapon Weapon)> cards = new();
         private ArsenalWeapon[] weapons = Array.Empty<ArsenalWeapon>();
 
-        [SerializeField] private WeaponStatCatalog statCatalog;
+        [SerializeField] private WeaponCategoryIcons categoryIcons;
 
         private Transform page;
         private GameObject categoryBar;
@@ -35,8 +29,6 @@ namespace Kodimodi.UI.Profile
         private LeanButton retryButton;
         private Action retryLoad;
         private WeaponStatsView statsView;
-        private Transform compactBar;
-        private Transform fullBar;
         private Transform states;
         private GameObject spinner;
         private GameObject canEquip;
@@ -48,7 +40,7 @@ namespace Kodimodi.UI.Profile
         private GameObject balancePanel;
         private ScrollRect scroll;
         private Button template;
-        private string category = "AR";
+        private string category = "pistol";
         private string apiBaseUrl;
         private string token;
         private ArsenalWeapon selected;
@@ -74,14 +66,14 @@ namespace Kodimodi.UI.Profile
             categoryPages = pages.gameObject;
             categoryBar = transform.Find("Categories").gameObject;
             page = pages.Find("PISTOL Page");
-            statsView = new WeaponStatsView(page, statCatalog, ProfileLoader.UseRussianInventoryStats);
+            statsView = new WeaponStatsView(page, ProfileLoader.UseRussianInventoryStats);
             foreach (Transform child in pages)
                 child.gameObject.SetActive(child == page);
 
-            compactBar = transform.Find("Categories/Compact");
-            fullBar = transform.Find("Categories/Full Width");
+            var compactBar = categoryBar.transform.Find("Compact");
+            compactBar.gameObject.SetActive(true);
+            categoryBar.transform.Find("Full Width").gameObject.SetActive(false);
             BindTabs(compactBar);
-            BindTabs(fullBar);
 
             states = page.Find("Equip States");
             canEquip = states.Find("Can Equip").gameObject;
@@ -128,12 +120,13 @@ namespace Kodimodi.UI.Profile
 
         private void BindTabs(Transform bar)
         {
-            foreach (var (name, code) in Categories)
+            foreach (var (name, code) in WeaponCategoryIcons.Tabs)
             {
                 var tab = bar.Find(name + " Tab");
                 if (tab == null)
                     continue;
 
+                categoryIcons?.Apply(tab, code);
                 var button = tab.GetComponent<Button>();
                 tabs.Add((button, tab.Find("Selected").gameObject, code));
                 button.onClick.AddListener(() =>
@@ -212,19 +205,12 @@ namespace Kodimodi.UI.Profile
                 statsView.Render(null);
             FinishLoad();
 
-            bool hasAdditionalCategories = Array.Exists(weapons, weapon =>
-                weapon != null && (Matches(weapon.categoryCode, "MG") || Matches(weapon.categoryCode, "SR")));
-            compactBar.gameObject.SetActive(!hasAdditionalCategories);
-            fullBar.gameObject.SetActive(hasAdditionalCategories);
-            if (!hasAdditionalCategories && (category == "MG" || category == "SR"))
-                category = "AR";
-
             if (selectFirstOwnedCategory && preferredCode != null)
             {
                 var preferred = Array.Find(weapons, weapon => weapon != null && Matches(weapon.code, preferredCode));
                 if (preferred != null)
                 {
-                    var entry = Array.Find(Categories, item => Matches(item.Code, preferred.categoryCode));
+                    var entry = Array.Find(WeaponCategoryIcons.Tabs, item => Matches(item.Code, preferred.categoryCode));
                     category = entry.Code ?? category;
                 }
             }
@@ -232,7 +218,7 @@ namespace Kodimodi.UI.Profile
             if (selectFirstOwnedCategory && !Array.Exists(weapons, weapon =>
                     weapon != null && Matches(weapon.categoryCode, category)))
             {
-                var firstCategory = Array.Find(Categories, entry => Array.Exists(weapons, weapon =>
+                var firstCategory = Array.Find(WeaponCategoryIcons.Tabs, entry => Array.Exists(weapons, weapon =>
                     weapon != null && Matches(weapon.categoryCode, entry.Code)));
                 category = firstCategory.Code ?? category;
             }
@@ -438,7 +424,7 @@ namespace Kodimodi.UI.Profile
             replacementHint.gameObject.SetActive(current != null);
             if (current != null)
             {
-                var tab = Array.Find(Categories, entry => Matches(entry.Code, selected.categoryCode));
+                var tab = Array.Find(WeaponCategoryIcons.Tabs, entry => Matches(entry.Code, selected.categoryCode));
                 replacementHint.text = $"Replaces {current.name} in the {tab.Tab} slot";
             }
         }

@@ -5,25 +5,6 @@ using UnityEngine.UI;
 
 namespace Kodimodi.UI.Profile
 {
-    [CreateAssetMenu(menuName = "Kodimodi/Weapon Stat Catalog")]
-    public sealed class WeaponStatCatalog : ScriptableObject
-    {
-        [Serializable]
-        internal struct Entry
-        {
-            public string code;
-            public string englishName;
-            public string russianName;
-
-            public string Name(bool russian) =>
-                russian && !string.IsNullOrEmpty(russianName) ? russianName : englishName;
-        }
-
-        [SerializeField] private Entry[] entries = Array.Empty<Entry>();
-
-        internal IReadOnlyList<Entry> Entries => entries;
-    }
-
     [Serializable]
     internal sealed class WeaponStatValue
     {
@@ -37,15 +18,13 @@ namespace Kodimodi.UI.Profile
 
         private readonly List<RectTransform> rows = new();
         private readonly Transform page;
-        private readonly WeaponStatCatalog catalog;
         private readonly bool russian;
         private readonly Vector2[] min = new Vector2[SceneRows.Length];
         private readonly Vector2[] max = new Vector2[SceneRows.Length];
 
-        public WeaponStatsView(Transform page, WeaponStatCatalog catalog, bool russian)
+        public WeaponStatsView(Transform page, bool russian)
         {
             this.page = page;
-            this.catalog = catalog;
             this.russian = russian;
             for (int i = 0; i < SceneRows.Length; i++)
             {
@@ -60,23 +39,13 @@ namespace Kodimodi.UI.Profile
 
         public void Render(WeaponStatValue[] stats)
         {
-            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var visible = new List<(string Name, int Value)>();
             if (stats != null)
             {
                 foreach (var stat in stats)
                 {
-                    if (stat != null && !string.IsNullOrEmpty(stat.statCode))
-                        values[stat.statCode] = stat.value;
-                }
-            }
-
-            var visible = new List<(string Name, int Value)>();
-            if (catalog != null)
-            {
-                foreach (var entry in catalog.Entries)
-                {
-                    if (!string.IsNullOrEmpty(entry.code) && values.Remove(entry.code, out int value))
-                        visible.Add((entry.Name(russian), value));
+                    if (stat != null && !string.IsNullOrWhiteSpace(stat.statCode))
+                        visible.Add((GetLabel(stat.statCode), stat.value));
                 }
             }
 
@@ -115,6 +84,29 @@ namespace Kodimodi.UI.Profile
                 Fit(label);
                 Fit(value);
             }
+        }
+
+        private string GetLabel(string code)
+        {
+            string key = code.Trim().ToLowerInvariant();
+            if (russian)
+            {
+                string translation = key switch
+                {
+                    "damage" => "Урон",
+                    "magazine_size" => "Ёмкость магазина",
+                    "fire_rate" => "Скорострельность",
+                    "reload" => "Перезарядка",
+                    "accuracy" => "Точность",
+                    "recoil_control" => "Контроль отдачи",
+                    _ => null
+                };
+                if (translation != null)
+                    return translation;
+            }
+
+            string label = key.Replace('_', ' ');
+            return char.ToUpperInvariant(label[0]) + label.Substring(1);
         }
 
         private static void Fit(Text text)

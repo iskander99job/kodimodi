@@ -14,12 +14,6 @@ namespace Kodimodi.UI.Profile
 {
     public sealed class WeaponShopScreen : MonoBehaviour
     {
-        private static readonly (string Tab, string Code)[] Categories =
-        {
-            ("AR", "AR"), ("PISTOL", "PST"), ("SMG", "SMG"),
-            ("SHOTGUN", "SG")
-        };
-
         [SerializeField] private string apiBaseUrl = "http://localhost:5028";
         [SerializeField] private WeaponAssetsCatalog weaponAssets;
 
@@ -29,7 +23,7 @@ namespace Kodimodi.UI.Profile
         private readonly HashSet<string> owned = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<(Button Button, GameObject Selected, string Code)> tabs = new();
 
-        [SerializeField] private WeaponStatCatalog statCatalog;
+        [SerializeField] private WeaponCategoryIcons categoryIcons;
 
         private Transform page;
         private WeaponStatsView statsView;
@@ -102,7 +96,7 @@ namespace Kodimodi.UI.Profile
             var pages = transform.Find("Category Pages");
             categoryPages = pages.gameObject;
             page = pages.Find("PISTOL Page");
-            statsView = new WeaponStatsView(page, statCatalog, ProfileLoader.UseRussianInventoryStats);
+            statsView = new WeaponStatsView(page, ProfileLoader.UseRussianInventoryStats);
             foreach (Transform child in pages)
                 child.gameObject.SetActive(child == page);
 
@@ -110,9 +104,10 @@ namespace Kodimodi.UI.Profile
             categoryBar.transform.Find("Full Width").gameObject.SetActive(false);
             var compactBar = categoryBar.transform.Find("Compact");
             compactBar.gameObject.SetActive(true);
-            foreach (var (name, code) in Categories)
+            foreach (var (name, code) in WeaponCategoryIcons.Tabs)
             {
                 var tab = compactBar.Find(name + " Tab");
+                categoryIcons?.Apply(tab, code);
                 var button = tab.GetComponent<Button>();
                 tabs.Add((button, tab.Find("Selected").gameObject, code));
                 button.onClick.AddListener(() => SelectCategory(code));
@@ -156,7 +151,7 @@ namespace Kodimodi.UI.Profile
 
             UpdateBalance();
             apiBaseUrl = apiBaseUrl.Trim().TrimEnd('/');
-            SelectCategory("AR");
+            SelectCategory("pistol");
         }
 
         private void OnDisable()
