@@ -1,6 +1,7 @@
 using System;
 using Kodimodi.Models;
 using Kodimodi.UI;
+using Kodimodi.UI.Profile;
 using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -280,11 +281,13 @@ namespace Kodimodi
         {
             try
             {
+                ProfileLoader.TryGetShopSession(out _, out var accessToken);
                 var join = new LobbyJoinModel
                 {
                     RoomId = roomId,
                     Nickname = playerNickname,
-                    HostToken = hostToken ?? ""
+                    HostToken = hostToken ?? "",
+                    AccessToken = accessToken
                 };
 
                 await socket.Send(
@@ -652,6 +655,12 @@ namespace Kodimodi
 
                 "closed" =>
                     "The room is closed.",
+
+                "invalid_session" =>
+                    "Your session expired. Sign in and try joining again.",
+
+                "arsenal_unavailable" =>
+                    "Couldn't load match equipment. Try joining again.",
 
                 "connection_timeout" =>
                     "The server did not respond in time.\n\n" +

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Akila.FPSFramework;
 using Kodimodi.Models;
+using Kodimodi.UI.Profile;
 using Lean.Gui;
 using NativeWebSocket;
 using TMPro;
@@ -14,6 +15,7 @@ namespace Kodimodi
     {
         [SerializeField] private Transform[] spawnPoints;
         [SerializeField] private GameObject playerPrefab, enemyPrefab;
+        [SerializeField] private WeaponAssetsCatalog weaponAssets;
 
         private readonly Dictionary<int, RemotePlayerVisuals> spawned = new();
         public IReadOnlyDictionary<int, RemotePlayerVisuals> Spawned => spawned;
@@ -501,6 +503,7 @@ public async void SetBattleReady(bool ready)
                     FindAnyObjectByType<Camera>().gameObject.SetActive(false);
 
                     GameObject player = Instantiate(playerPrefab, pos, Quaternion.identity);
+                    ConfigureLocalInventory(player, resp.LocalWeaponCodes);
                     localPlayer = player;
                     player.GetComponent<NetworkPlayer>().playerId = s.Id;
                     player.name = "Player_" + s.Id;
@@ -517,6 +520,30 @@ public async void SetBattleReady(bool ready)
             }
 
             GetComponent<Livekit>().ConnectToRoom(id, livekitToken);
+        }
+
+        private void ConfigureLocalInventory(GameObject player, string[] weaponCodes)
+        {
+            var inventory = player.GetComponentInChildren<Inventory>(true);
+            if (inventory == null || weaponAssets == null || weaponCodes == null)
+                return;
+
+            var items = new List<InventoryItem>(weaponCodes.Length);
+            foreach (var code in weaponCodes)
+            {
+                var prefab = weaponAssets.GetLocalWeaponPrefab(code);
+                if (prefab != null && prefab.TryGetComponent<InventoryItem>(out var item))
+                    items.Add(item);
+                else
+                    Debug.LogWarning($"No FPS InventoryItem prefab configured for weapon {code}.", weaponAssets);
+            }
+
+            // Akila instantiates startItems and selects slot zero in Inventory.Start.
+            if (items.Count > 0)
+            {
+                inventory.startItems = items;
+                inventory.maxSlots = Mathf.Max(inventory.maxSlots, items.Count);
+            }
         }
 
         private void HandleShoot(WsEnvelopeModel model)

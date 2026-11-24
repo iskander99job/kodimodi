@@ -9,6 +9,7 @@ namespace Kodimodi.Models
         public SpawnInfo[] Spawns { get; set; } = Array.Empty<SpawnInfo>();
         public string LivekitToken { get; set; }
         public string Error { get; set; }
+        public string[] LocalWeaponCodes { get; set; } = Array.Empty<string>();
     }
     
     [MemoryPackable]

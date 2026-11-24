@@ -14,5 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.UI.Profile.WeaponAssetsCatalog
   entries:
   - code: M4A1
-    prefab: {fileID: 395104231899459405, guid: bbabec215dfafb844b5dfd983988a7d0, type: 3}
+    localWeaponPrefab: {fileID: 395104231899459405, guid: bbabec215dfafb844b5dfd983988a7d0, type: 3}
     icon: {fileID: 21300000, guid: d82ce336f65f4fff9fd0cdb62728d108, type: 3}
+  - code: VEX-9
+    localWeaponPrefab: {fileID: 2426864949442948993, guid: 4c05e8a5f8800445d82fdd4e2cf052ce, type: 3}
+  - code: RAVEX-50
+    localWeaponPrefab: {fileID: 3992829094148515345, guid: 13a7c254b6dc54bb88a004adef1b7f1e, type: 3}
+  - code: NEON-X
+    localWeaponPrefab: {fileID: 6837210762514662293, guid: b1aa263da7e7744868513c3e8f1a1833, type: 3}

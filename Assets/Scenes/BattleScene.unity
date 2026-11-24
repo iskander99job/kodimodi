@@ -147916,6 +147916,7 @@ MonoBehaviour:
     type: 3}
   enemyPrefab: {fileID: 1968741007276225869, guid: f03119f21881846229ce64866d4f741e,
     type: 3}
+  weaponAssets: {fileID: 11400000, guid: 583c0274355f429981839c58835e56e9, type: 2}
   id: 0
   livekitToken: 
 --- !u!114 &1968886157

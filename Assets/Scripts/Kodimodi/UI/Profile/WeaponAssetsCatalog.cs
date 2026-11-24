@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Kodimodi.UI.Profile
 {
@@ -10,14 +11,18 @@ namespace Kodimodi.UI.Profile
         private struct Entry
         {
             public string code;
-            public GameObject prefab;
+            [FormerlySerializedAs("prefab")]
+            public GameObject localWeaponPrefab;
+            public GameObject enemyWeaponPrefab;
             public Sprite icon;
             public Sprite preview;
         }
 
         [SerializeField] private Entry[] entries = Array.Empty<Entry>();
 
-        public GameObject GetPrefab(string code) => Find(code).prefab;
+        public GameObject GetPrefab(string code) => GetLocalWeaponPrefab(code);
+
+        public GameObject GetLocalWeaponPrefab(string code) => Find(code).localWeaponPrefab;
 
         public Sprite GetIcon(string code) => Find(code).icon;
 
