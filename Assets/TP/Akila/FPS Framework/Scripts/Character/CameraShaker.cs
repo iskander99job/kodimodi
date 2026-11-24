@@ -108,6 +108,17 @@ namespace Akila.FPSFramework
             return shake;
         }
 
+        public void ResetShake()
+        {
+            profiles.Clear();
+            currentShakePosition = Vector3.zero;
+            currentShakeRotation = Vector3.zero;
+
+            if (!updateTransform) return;
+            transform.localPosition = defaultPosition;
+            transform.localRotation = Quaternion.Euler(defaultRotation);
+        }
+
         public void WakeUp() => updateTransform = true;
         public void Sleep() => updateTransform = false;
     }

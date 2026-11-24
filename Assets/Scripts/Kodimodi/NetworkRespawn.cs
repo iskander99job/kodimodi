@@ -280,6 +280,9 @@ namespace Kodimodi
             movement.ResetAfterNetworkRespawn();
             damageable.ResetForRespawn();
 
+            foreach (var shaker in GetComponentsInChildren<CameraShaker>(true))
+                shaker.ResetShake();
+
             // Респавн не снимает блокировку из-за отсутствия видео.
             FPSFrameworkCore.IsInputActive =
                 battle == null || battle.CanPlay;
