@@ -19,6 +19,10 @@ namespace Kodimodi
 
         private readonly Dictionary<int, RemotePlayerVisuals> spawned = new();
         public IReadOnlyDictionary<int, RemotePlayerVisuals> Spawned => spawned;
+        private readonly Dictionary<int, string> playerNicknames = new();
+
+        public string GetPlayerNickname(int playerId) =>
+            playerNicknames.TryGetValue(playerId, out var nickname) ? nickname : "Guest";
 
         public WebSocket websocket;
         public int id;
@@ -496,6 +500,7 @@ public async void SetBattleReady(bool ready)
             battleReady = true;
             foreach (var s in resp.Spawns)
             {
+                playerNicknames[s.Id] = string.IsNullOrWhiteSpace(s.Nickname) ? "Guest" : s.Nickname;
                 var pos = new Vector3(s.Position.X, s.Position.Y, s.Position.Z);
 
                 if (s.Id == this.id)

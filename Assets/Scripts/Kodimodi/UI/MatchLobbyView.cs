@@ -1,3 +1,4 @@
+using Kodimodi.Models;
 using Lean.Gui;
 using TMPro;
 using UnityEngine;
@@ -169,7 +170,8 @@ namespace Kodimodi.UI
             int count,
             int capacity,
             int yourIndex = -1,
-            int hostIndex = -1)
+            int hostIndex = -1,
+            LobbyPlayerModel[] players = null)
         {
             ClearPlayers();
             SetSummary(count, capacity);
@@ -202,8 +204,12 @@ namespace Kodimodi.UI
 
                     if (label != null)
                     {
+                        string nickname = players != null && i < players.Length
+                            ? players[i]?.Nickname
+                            : null;
+                        label.richText = false;
                         label.text = occupied
-                            ? $"Player {i + 1}"
+                            ? (string.IsNullOrWhiteSpace(nickname) ? "Guest" : nickname)
                             : "Waiting for player…";
 
                         if (occupied && i == yourIndex)

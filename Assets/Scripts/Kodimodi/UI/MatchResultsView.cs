@@ -73,7 +73,8 @@ namespace Kodimodi.UI
         public void Render(
             MatchEndedModel result,
             int localId,
-            IReadOnlyCollection<int> departedIds)
+            IReadOnlyCollection<int> departedIds,
+            System.Func<int, string> getNickname)
         {
             if (result == null || !Initialize())
                 return;
@@ -129,7 +130,7 @@ namespace Kodimodi.UI
                 generated.Add(row);
 
                 SetText(row.transform, "Place", (i + 1).ToString());
-                SetText(row.transform, "Name", $"Игрок {player.Id}");
+                SetText(row.transform, "Name", getNickname(player.Id));
                 SetText(row.transform, "Kills", player.Kills.ToString());
 
                 var status = FindText(row.transform, "Status/Text");

@@ -499,7 +499,8 @@ namespace Kodimodi.UI
             matchStatsUI.Render(
                 lastBoard,
                 client.id,
-                client.DepartedPlayerIds);
+                client.DepartedPlayerIds,
+                client.GetPlayerNickname);
         }
 
         private void OnScoreboard(ScoreboardModel board)
@@ -720,7 +721,8 @@ namespace Kodimodi.UI
             matchResultsUI.Render(
                 result,
                 client.id,
-                client.DepartedPlayerIds);
+                client.DepartedPlayerIds,
+                client.GetPlayerNickname);
 
             matchResultsUI.SetVisible(true);
         }

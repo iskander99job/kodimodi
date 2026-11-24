@@ -36,7 +36,8 @@ namespace Kodimodi.UI
         public void Render(
             ScoreboardModel board,
             int localId,
-            IReadOnlyCollection<int> departedIds)
+            IReadOnlyCollection<int> departedIds,
+            System.Func<int, string> getNickname)
         {
             foreach (var row in generated)
             {
@@ -91,7 +92,7 @@ namespace Kodimodi.UI
                 row.SetActive(true);
 
                 SetText(row.transform, "Place", (i + 1).ToString());
-                SetText(row.transform, "Name", $"Игрок {player.Id}");
+                SetText(row.transform, "Name", getNickname(player.Id));
                 SetText(row.transform, "Kills", player.Kills.ToString());
                 SetText(row.transform, "Status",
                     departed ? "Вышел" : "В игре");

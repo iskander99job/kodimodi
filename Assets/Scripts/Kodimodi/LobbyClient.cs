@@ -1,6 +1,7 @@
 using System;
 using Kodimodi.Models;
 using Kodimodi.UI;
+using Kodimodi.UI.Profile;
 using NativeWebSocket;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,7 +15,6 @@ namespace Kodimodi
         public event Action<string> Closed;
 
         [Header("Настройки")]
-        [SerializeField] private string nickname = "Player";
         [SerializeField] private string editorTestUrl = "";
         [SerializeField] private string matchSceneName = "LevelTst";
 
@@ -85,7 +85,7 @@ namespace Kodimodi
             int maxPlayers)
         {
             capacity = maxPlayers;
-            Connect(code, nickname, hostToken);
+            Connect(code, hostToken);
         }
 
         public void ShowPreview(string code)
@@ -158,14 +158,13 @@ namespace Kodimodi
                 return;
             }
 
-            Connect(RoomCode, nickname, null);
+            Connect(RoomCode, null);
         }
 
         // ---------- Подключение ----------
 
         public async void Connect(
             string roomId,
-            string playerNickname,
             string hostToken)
         {
             if (preview != null)
@@ -226,7 +225,6 @@ namespace Kodimodi
                     SendJoin(
                         socket,
                         roomId,
-                        playerNickname,
                         hostToken);
                 };
 
@@ -275,7 +273,6 @@ namespace Kodimodi
         private async void SendJoin(
             WebSocket socket,
             string roomId,
-            string playerNickname,
             string hostToken)
         {
             try
@@ -283,7 +280,7 @@ namespace Kodimodi
                 var join = new LobbyJoinModel
                 {
                     RoomId = roomId,
-                    Nickname = playerNickname,
+                    Nickname = FindAnyObjectByType<ProfileLoader>()?.Nickname ?? "Guest",
                     HostToken = hostToken ?? ""
                 };
 
@@ -468,7 +465,8 @@ namespace Kodimodi
                 playerCount,
                 capacity,
                 yourIndex,
-                hostIndex);
+                hostIndex,
+                state.Players);
 
             view.SetActions(
                 false,

@@ -27,6 +27,7 @@ namespace Kodimodi.UI.Profile
         private TMP_Text balanceText;
         private string sessionApiBaseUrl;
         private string sessionAccessToken;
+        internal string Nickname { get; private set; } = "Guest";
         private bool isLoading;
         private static (string ApiUrl, string Token) shopSession;
         internal static bool UseRussianInventoryStats { get; private set; }
@@ -246,7 +247,8 @@ namespace Kodimodi.UI.Profile
             sessionAccessToken = null;
             ownedWeapons.Clear();
 
-            profileRank.SetNickname("Guest");
+            Nickname = "Guest";
+            profileRank.SetNickname(Nickname);
             profileRank.SetXP(0);
             SetCoins(0);
             SetSignedIn(false);
@@ -324,7 +326,8 @@ namespace Kodimodi.UI.Profile
                 sessionApiBaseUrl = apiBaseUrl;
                 sessionAccessToken = accessToken;
 
-                profileRank.SetNickname(profile.nickname);
+                Nickname = profile.nickname;
+                profileRank.SetNickname(Nickname);
                 profileRank.SetXP(profile.xp);
                 SetCoins(profile.coins);
                 SetSignedIn(true);
