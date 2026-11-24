@@ -12,7 +12,7 @@ namespace Kodimodi.UI.Profile
 
         public static char Password(string text, int index, char character)
         {
-            return character >= ' ' && character <= '~' ? character : '\0';
+            return character >= '!' && character <= '~' ? character : '\0';
         }
     }
 }
