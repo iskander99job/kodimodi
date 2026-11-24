@@ -137,7 +137,9 @@ namespace Kodimodi
             connectStartedAt = Time.realtimeSinceStartup;
             connectingStarted = true;
             
-            websocket = new WebSocket($"{ServerConfig.WsUrl}/battle");
+            string battleUrl = $"{ServerConfig.WsUrl}/battle";
+            Debug.Log($"[BattleJoin] Connecting to /battle; playerId={id}.");
+            websocket = new WebSocket(battleUrl);
             
             websocket.OnOpen += async () =>
             {
@@ -148,6 +150,8 @@ namespace Kodimodi
                 nextHeartbeatAt = openedAt + 5f;
 
                 ProfileLoader.TryGetShopSession(out _, out var accessToken);
+                string sessionType = string.IsNullOrWhiteSpace(accessToken) ? "guest" : "account";
+                Debug.Log($"[BattleJoin] Sending join request; session={sessionType}.");
                 var model = new BattlePingRequestModel
                 {
                     id = this.id,
@@ -163,15 +167,28 @@ namespace Kodimodi
                             WsMessageType.BattlePingRequest,
                             model));
                 }
-                catch
+                catch (Exception exception)
                 {
+                    Debug.LogWarning($"[BattleJoin] Join send failed; exception={exception.GetType().Name}.");
                     FailConnection("connection_lost");
                 }
             };
-            
-            websocket.OnError += e => FailConnection("connection_lost");
 
-            websocket.OnClose += code => FailConnection("connection_lost");
+            websocket.OnError += _ =>
+            {
+                if (!battleReady && !leaving)
+                    Debug.LogWarning("[BattleJoin] WebSocket error before spawn.");
+
+                FailConnection("connection_lost");
+            };
+
+            websocket.OnClose += code =>
+            {
+                if (!battleReady && !leaving)
+                    Debug.LogWarning($"[BattleJoin] WebSocket closed before spawn; code={code}.");
+
+                FailConnection("connection_lost");
+            };
             
             websocket.OnMessage += bytes =>
             {
@@ -491,9 +508,11 @@ public async void SetBattleReady(bool ready)
             // сервер отклонил вход: комната закрыта, игрок не участник и т.д.
             if (!string.IsNullOrEmpty(resp.Error))
             {
+                Debug.LogWarning($"[BattleJoin] Server rejected join; reason={resp.Error}; elapsed={Time.realtimeSinceStartup - openedAt:F2}s.");
                 FailConnection(resp.Error);
                 return;
             }
+            Debug.Log($"[BattleJoin] Spawn received; players={resp.Spawns.Length}; weapons={resp.LocalWeaponCodes?.Length ?? 0}; elapsed={Time.realtimeSinceStartup - openedAt:F2}s.");
             battleReady = true;
             foreach (var s in resp.Spawns)
             {
