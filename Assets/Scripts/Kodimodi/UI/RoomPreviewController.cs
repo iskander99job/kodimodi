@@ -1,4 +1,5 @@
 using System;
+using Kodimodi.Models;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -255,7 +256,11 @@ namespace Kodimodi.UI
                 : "Joining this room is currently unavailable.";
 
             lobby.ApplyPreview(
-                data.players.Length,
+                Array.ConvertAll(data.players, player => new LobbyPlayerModel
+                {
+                    Id = player.id,
+                    Nickname = player.nickname
+                }),
                 data.maxPlayers,
                 canJoin,
                 status);

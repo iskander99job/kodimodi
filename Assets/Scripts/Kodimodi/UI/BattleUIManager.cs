@@ -549,7 +549,7 @@ namespace Kodimodi.UI
             }
 
             notifications?.Show(
-                $"Игрок {playerId} вышел из матча");
+                $"{client.GetPlayerNickname(playerId)} вышел из матча");
 
             if (statisticOpen)
                 RenderStats();

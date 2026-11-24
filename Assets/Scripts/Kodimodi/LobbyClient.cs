@@ -116,7 +116,7 @@ namespace Kodimodi
         }
 
         public void ApplyPreview(
-            int count,
+            LobbyPlayerModel[] players,
             int maxPlayers,
             bool canJoin,
             string status)
@@ -130,7 +130,7 @@ namespace Kodimodi
             if (view != null)
             {
                 view.SetLoading(false);
-                view.RenderPlayers(count, capacity);
+                view.RenderPlayers(players.Length, capacity, players: players);
                 view.SetStatus(status);
                 view.SetActions(true, canJoin, false, false);
             }
