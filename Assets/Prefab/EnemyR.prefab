@@ -956,8 +956,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a89cd41c96f94752a00ecb5a8d368c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.RemotePlayerVisuals
-  weaponMount: {fileID: 0}
-  fallbackWeapon: {fileID: 0}
+  weaponMount: {fileID: 400001}
+  fallbackWeapon: {fileID: 996519302724975738}
   animator: {fileID: 4239347148978269711}
   interpolationDelay: 0.1
   shotAudio: {fileID: 1354252262411661704}
