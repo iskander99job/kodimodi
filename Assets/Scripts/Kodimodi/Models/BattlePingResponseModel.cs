@@ -17,5 +17,7 @@ namespace Kodimodi.Models
     {
         public int Id { get; set; }
         public Vec3 Position { get; set; }
+        public string Nickname { get; set; }
+        public string RankCode { get; set; }
     }
 }

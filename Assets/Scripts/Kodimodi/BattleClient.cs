@@ -147,11 +147,13 @@ namespace Kodimodi
                 openedAt = lastReceivedAt = Time.realtimeSinceStartup;
                 nextHeartbeatAt = openedAt + 5f;
 
+                ProfileLoader.TryGetShopSession(out _, out var accessToken);
                 var model = new BattlePingRequestModel
                 {
                     id = this.id,
                     RoomId = MatchSession.RoomId,
-                    BattleToken = MatchSession.BattleToken
+                    BattleToken = MatchSession.BattleToken,
+                    AccessToken = accessToken
                 };
 
                 try

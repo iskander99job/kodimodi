@@ -8,8 +8,7 @@ namespace Kodimodi.Models
     {
         public string RoomId { get; set; }
         public string Nickname { get; set; }
-        public string HostToken { get; set; }
-        public string AccessToken { get; set; }   // только у создателя
+        public string HostToken { get; set; }   // только у создателя
     }
 
     [MemoryPackable]

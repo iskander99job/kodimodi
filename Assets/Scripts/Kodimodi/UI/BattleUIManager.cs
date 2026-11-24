@@ -632,6 +632,8 @@ namespace Kodimodi.UI
 
             string message = reason switch
             {
+                "invalid_session" => "Your session expired. Sign in and try joining again.",
+                "arsenal_unavailable" => "Couldn't load match equipment. Try joining again.",
                 "loading_timeout" =>
                     "Не все игроки успели подготовиться. Матч отменён.",
 
