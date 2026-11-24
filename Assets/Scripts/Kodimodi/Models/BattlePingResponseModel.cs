@@ -19,5 +19,6 @@ namespace Kodimodi.Models
         public Vec3 Position { get; set; }
         public string Nickname { get; set; }
         public string RankCode { get; set; }
+        public string WeaponCode { get; set; }
     }
 }

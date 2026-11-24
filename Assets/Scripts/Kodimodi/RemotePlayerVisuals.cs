@@ -7,6 +7,28 @@ namespace Kodimodi
 {
     public class RemotePlayerVisuals : MonoBehaviour
     {
+        [SerializeField] private Transform weaponMount;
+        [SerializeField] private GameObject fallbackWeapon;
+        private GameObject equippedWeapon;
+        private GameObject equippedWeaponPrefab;
+
+        public void SetWeapon(GameObject prefab)
+        {
+            if (weaponMount == null || equippedWeaponPrefab == prefab)
+                return;
+
+            if (equippedWeapon != null)
+            {
+                equippedWeapon.SetActive(false);
+                Destroy(equippedWeapon);
+            }
+
+            equippedWeaponPrefab = prefab;
+            equippedWeapon = prefab != null ? Instantiate(prefab, weaponMount, false) : null;
+            if (fallbackWeapon != null)
+                fallbackWeapon.SetActive(equippedWeapon == null);
+        }
+
         [SerializeField] private Animator animator;
         [SerializeField, Min(0.05f)]
         private float interpolationDelay = 0.1f;

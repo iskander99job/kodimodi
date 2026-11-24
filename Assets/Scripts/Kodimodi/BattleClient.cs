@@ -19,6 +19,11 @@ namespace Kodimodi
 
         private readonly Dictionary<int, RemotePlayerVisuals> spawned = new();
         public IReadOnlyDictionary<int, RemotePlayerVisuals> Spawned => spawned;
+        private Inventory localInventory;
+        private readonly List<string> localWeaponCodes = new();
+        private readonly Dictionary<InventoryItem, string> localWeaponItems = new();
+        private string announcedWeaponCode;
+        private bool sendingWeapon;
         private readonly Dictionary<int, string> playerNicknames = new();
 
         public string GetPlayerNickname(int playerId) =>
@@ -219,6 +224,11 @@ namespace Kodimodi
                     case WsMessageType.MatchEnded:
                         HandleMatchEnded(WsProtocol.UnpackPayload<MatchEndedModel>(model)); break;
                     case WsMessageType.BattleHeartbeatAck:
+                        break;
+                    case WsMessageType.PlayerWeaponChanged:
+                        var weapon = WsProtocol.UnpackPayload<PlayerWeaponChangedModel>(model);
+                        if (spawned.TryGetValue(weapon.Id, out var remote) && remote != null)
+                            remote.SetWeapon(weaponAssets?.GetEnemyWeaponPrefab(weapon.WeaponCode));
                         break;
                     case WsMessageType.PlayerReload:
                         HandleReload(
@@ -521,7 +531,9 @@ public async void SetBattleReady(bool ready)
                     GameObject player = Instantiate(enemyPrefab, pos, Quaternion.identity);
                     player.name = "Player_" + s.Id;
                     player.GetComponent<NetworkPlayer>().playerId = s.Id;
-                    spawned[s.Id] = player.GetComponent<RemotePlayerVisuals>();
+                    var remote = player.GetComponent<RemotePlayerVisuals>();
+                    remote.SetWeapon(weaponAssets?.GetEnemyWeaponPrefab(s.WeaponCode));
+                    spawned[s.Id] = remote;
                 }
             }
 
@@ -539,7 +551,10 @@ public async void SetBattleReady(bool ready)
             {
                 var prefab = weaponAssets.GetLocalWeaponPrefab(code);
                 if (prefab != null && prefab.TryGetComponent<InventoryItem>(out var item))
+                {
                     items.Add(item);
+                    localWeaponCodes.Add(code);
+                }
                 else
                     Debug.LogWarning($"No FPS InventoryItem prefab configured for weapon {code}.", weaponAssets);
             }
@@ -547,6 +562,7 @@ public async void SetBattleReady(bool ready)
             // Akila instantiates startItems and selects slot zero in Inventory.Start.
             if (items.Count > 0)
             {
+                localInventory = inventory;
                 inventory.startItems = items;
                 inventory.maxSlots = Mathf.Max(inventory.maxSlots, items.Count);
             }
@@ -651,8 +667,44 @@ public async void SetBattleReady(bool ready)
             }
         }
 
+        private async void SyncActiveWeapon()
+        {
+            if (localInventory == null)
+                return;
+
+            if (localWeaponItems.Count == 0 && localInventory.items.Count == localWeaponCodes.Count)
+            {
+                for (int i = 0; i < localWeaponCodes.Count; i++)
+                    localWeaponItems.Add(localInventory.items[i], localWeaponCodes[i]);
+            }
+
+            var active = localInventory.currentItem;
+            if (sendingWeapon || !IsBattleStarted || IsMatchEnded || IsDisconnected || leaving ||
+                active == null || !localWeaponItems.TryGetValue(active, out var code) ||
+                code == announcedWeaponCode)
+                return;
+
+            sendingWeapon = true;
+            try
+            {
+                await websocket.Send(WsProtocol.Pack(WsMessageType.PlayerWeaponChanged,
+                    new PlayerWeaponChangedModel { WeaponCode = code }));
+                announcedWeaponCode = code;
+            }
+            catch (Exception)
+            {
+                FailConnection("connection_lost");
+            }
+            finally
+            {
+                sendingWeapon = false;
+            }
+        }
+
         private void LateUpdate()
         {
+            SyncActiveWeapon();
+
             if (!IsBattleStarted ||
                 IsMatchEnded ||
                 IsDisconnected ||

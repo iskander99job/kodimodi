@@ -35,6 +35,7 @@ namespace Kodimodi.Models
         PlayerReload = 20,
         BattleReady = 21,
         BattleCountdown = 22,
-        BattleStarted = 23
+        BattleStarted = 23,
+        PlayerWeaponChanged = 24
     }
 }

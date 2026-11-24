@@ -22,6 +22,8 @@ namespace Kodimodi.UI.Profile
 
         public GameObject GetPrefab(string code) => GetLocalWeaponPrefab(code);
 
+        public GameObject GetEnemyWeaponPrefab(string code) => Find(code).enemyWeaponPrefab;
+
         public GameObject GetLocalWeaponPrefab(string code) => Find(code).localWeaponPrefab;
 
         public Sprite GetIcon(string code) => Find(code).icon;

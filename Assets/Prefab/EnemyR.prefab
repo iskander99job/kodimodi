@@ -499,17 +499,17 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 996519302724975738}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.46035117, y: -0.5727958, z: -0.33472353, w: -0.5898661}
-  m_LocalPosition: {x: -0.029, y: 0.512, z: 0.167}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1250108799255993706}
   - {fileID: 1821554158540420622}
   - {fileID: 7149430762919730681}
   - {fileID: 896763316487305737}
-  m_Father: {fileID: 6820729233048055976}
-  m_LocalEulerAnglesHint: {x: -67.903, y: -257.716, z: 339.378}
+  m_Father: {fileID: 400001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1071177787864768255
 GameObject:
   m_ObjectHideFlags: 0
@@ -924,6 +924,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a89cd41c96f94752a00ecb5a8d368c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.RemotePlayerVisuals
+  weaponMount: {fileID: 400001}
+  fallbackWeapon: {fileID: 996519302724975738}
   animator: {fileID: 4239347148978269711}
   interpolationDelay: 0.1
   shotAudio: {fileID: 1354252262411661704}
@@ -2652,7 +2654,7 @@ Transform:
   - {fileID: 3113563473948838469}
   - {fileID: 5057152116223404395}
   - {fileID: 1893324287814971146}
-  - {fileID: 6692353524445808821}
+  - {fileID: 400001}
   m_Father: {fileID: 3622500770401426247}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5285562866836179060
@@ -3937,3 +3939,35 @@ Transform:
   - {fileID: 6360979963155541485}
   m_Father: {fileID: 4140179559964937831}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &100001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 400001}
+  m_Layer: 0
+  m_Name: WeaponMount
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &400001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.46035117, y: -0.5727958, z: -0.33472353, w: -0.5898661}
+  m_LocalPosition: {x: -0.029, y: 0.512, z: 0.167}
+  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6692353524445808821}
+  m_Father: {fileID: 6820729233048055976}
+  m_LocalEulerAnglesHint: {x: -67.903, y: -257.716, z: 339.378}
