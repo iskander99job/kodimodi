@@ -272,7 +272,7 @@ namespace Kodimodi.UI.Profile
                 var label = card.transform.Find("Weapon Label").GetComponent<Text>();
                 label.supportRichText = false;
                 label.text = weapon.name;
-                SetIcon(card.transform.Find("Thumbnail").GetComponent<Image>(), weapon.code);
+                SetWeaponImage(card.transform.Find("Thumbnail").GetComponent<Image>(), weaponAssets?.GetIcon(weapon.code));
                 card.onClick.AddListener(() =>
                 {
                     if (!ReferenceEquals(weapon, selected))
@@ -406,7 +406,7 @@ namespace Kodimodi.UI.Profile
             var title = page.Find("Weapon Name").GetComponent<Text>();
             title.supportRichText = false;
             title.text = selected?.name ?? "";
-            SetIcon(page.Find("Weapon Preview").GetComponent<Image>(), selected?.code);
+            SetWeaponImage(page.Find("Weapon Preview").GetComponent<Image>(), weaponAssets?.GetPreview(selected?.code));
 
             foreach (var (button, weapon) in cards)
             {
@@ -498,11 +498,10 @@ namespace Kodimodi.UI.Profile
             message.gameObject.SetActive(text != null);
         }
 
-        private void SetIcon(Image image, string code)
+        private static void SetWeaponImage(Image image, Sprite sprite)
         {
-            var icon = weaponAssets?.GetIcon(code);
-            image.sprite = icon;
-            image.enabled = icon != null;
+            image.sprite = sprite;
+            image.enabled = sprite != null;
         }
 
         private static bool Matches(string first, string second) =>

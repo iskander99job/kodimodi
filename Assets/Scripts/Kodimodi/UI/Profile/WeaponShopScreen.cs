@@ -286,7 +286,7 @@ namespace Kodimodi.UI.Profile
             var label = button.transform.Find("Weapon Label").GetComponent<Text>();
             label.text = weapon.name;
             label.supportRichText = false;
-            RenderIcon(button.transform.Find("Thumbnail").GetComponent<Image>(), weapon.code);
+            SetWeaponImage(button.transform.Find("Thumbnail").GetComponent<Image>(), weaponAssets?.GetIcon(weapon.code));
 
             var rank = button.transform.Find("Required Rank").GetComponent<Text>();
             rank.text = weapon.minRank?.englishName ?? "";
@@ -477,7 +477,7 @@ namespace Kodimodi.UI.Profile
         private void RenderSelection()
         {
             page.Find("Weapon Name").GetComponent<Text>().text = selected?.name ?? "";
-            RenderIcon(page.Find("Weapon Preview").GetComponent<Image>(), selected?.code);
+            SetWeaponImage(page.Find("Weapon Preview").GetComponent<Image>(), weaponAssets?.GetPreview(selected?.code));
             statsView.Render(selected?.stats);
 
             bool isOwned = selected != null && owned.Contains(selected.code);
@@ -504,11 +504,10 @@ namespace Kodimodi.UI.Profile
                 tab.Button.interactable = !buying;
         }
 
-        private void RenderIcon(Image image, string code)
+        private static void SetWeaponImage(Image image, Sprite sprite)
         {
-            var icon = weaponAssets?.GetIcon(code);
-            image.sprite = icon;
-            image.enabled = icon != null;
+            image.sprite = sprite;
+            image.enabled = sprite != null;
         }
 
         private void ClearRejectedSession()

@@ -12,6 +12,7 @@ namespace Kodimodi.UI.Profile
             public string code;
             public GameObject prefab;
             public Sprite icon;
+            public Sprite preview;
         }
 
         [SerializeField] private Entry[] entries = Array.Empty<Entry>();
@@ -19,6 +20,12 @@ namespace Kodimodi.UI.Profile
         public GameObject GetPrefab(string code) => Find(code).prefab;
 
         public Sprite GetIcon(string code) => Find(code).icon;
+
+        public Sprite GetPreview(string code)
+        {
+            var entry = Find(code);
+            return entry.preview != null ? entry.preview : entry.icon;
+        }
 
         private Entry Find(string code)
         {
