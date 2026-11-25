@@ -11,6 +11,15 @@ namespace Kodimodi
     {
         private static string LivekitURL = "ws://localhost:7880";
 
+#if DEVELOPMENT_BUILD && !UNITY_EDITOR
+        private static bool? disableLivekitInDevelopment;
+        internal static bool SkipMediaChecks =>
+            disableLivekitInDevelopment ??= Resources.Load<LivekitDevelopmentSettings>(
+                nameof(LivekitDevelopmentSettings))?.DisableLivekit == true;
+#else
+        internal static bool SkipMediaChecks => false;
+#endif
+
         private const float ConnectionRetryInterval = 2f;
         private const float VideoBindInterval = 0.25f;
 
@@ -79,6 +88,12 @@ namespace Kodimodi
 
             nextVideoBind = 0f;
             battleClient = GetComponent<BattleClient>();
+
+            if (SkipMediaChecks)
+            {
+                battleClient?.SetBattleReady(true);
+                return;
+            }
 
             if (cameraGuard == null)
                 cameraGuard = GetComponent<BattleCameraGuard>();

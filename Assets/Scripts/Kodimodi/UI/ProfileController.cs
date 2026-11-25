@@ -34,11 +34,12 @@ namespace Kodimodi.UI
             webcamPreview.IsReady;
 
         public bool MediaReady =>
-            mediaAccess != null &&
-            mediaAccess.isActiveAndEnabled &&
-            mediaAccess.CameraGranted &&
-            mediaAccess.MicrophoneGranted &&
-            IsCameraReady;
+            Livekit.SkipMediaChecks ||
+            (mediaAccess != null &&
+             mediaAccess.isActiveAndEnabled &&
+             mediaAccess.CameraGranted &&
+             mediaAccess.MicrophoneGranted &&
+             IsCameraReady);
 
         public bool CameraStarting => cameraRoutine != null;
 
