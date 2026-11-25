@@ -183,6 +183,12 @@ namespace Kodimodi.UI
             if (!CanUpdateUI)
                 return;
 
+            if (Livekit.SkipMediaChecks)
+            {
+                RefreshEntryUI();
+                return;
+            }
+
             if (permissionHelp != null)
                 permissionHelp.SetBrowser(mediaAccess.BrowserName);
 
