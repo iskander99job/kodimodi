@@ -43,6 +43,15 @@ namespace Kodimodi
         private readonly HashSet<string> requestedSubscriptions = new();
         private readonly HashSet<string> seenPublications = new();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [SerializeField] private bool showVideoSubscriptionLines = true;
+
+        private readonly HashSet<int> playersWithVideo = new();
+        private readonly Dictionary<int, LineRenderer> subscriptionLines = new();
+        private readonly List<int> removedLines = new();
+        private Material subscriptionLineMaterial;
+#endif
+
         private Room mRoom;
         private BattleClient battleClient;
         private bool refreshSubscriptions;
@@ -324,6 +333,9 @@ namespace Kodimodi
 
         private void UpdateSubscriptions()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            playersWithVideo.Clear();
+#endif
             if (mRoom == null || mRoom.State != ConnectionState.Connected)
                 return;
 
@@ -334,7 +346,7 @@ namespace Kodimodi
 
             foreach (var participant in mRoom.RemoteParticipants.Values)
             {
-                bool hasPosition = TryGetDistanceSquared(participant, localPlayer, out float distanceSquared);
+                bool hasPosition = TryGetDistanceSquared(participant, localPlayer, out var playerId, out float distanceSquared);
                 bool videoAvailable = false;
 
                 foreach (var track in participant.VideoTrackPublications.Values)
@@ -351,6 +363,11 @@ namespace Kodimodi
                     if (inRange && publication.IsSubscribed && !publication.IsMuted)
                         videoAvailable = true;
                 }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+                if (showVideoSubscriptionLines && videoAvailable)
+                    playersWithVideo.Add(playerId);
+#endif
 
                 foreach (var track in participant.AudioTrackPublications.Values)
                 {
@@ -382,11 +399,12 @@ namespace Kodimodi
                 requestedSubscriptions.Remove(sid);
         }
 
-        private bool TryGetDistanceSquared(RemoteParticipant participant, GameObject localPlayer, out float distanceSquared)
+        private bool TryGetDistanceSquared(RemoteParticipant participant, GameObject localPlayer,
+            out int playerId, out float distanceSquared)
         {
             distanceSquared = 0f;
-            if (localPlayer == null ||
-                !int.TryParse(participant.Identity, out int playerId) ||
+            if (!int.TryParse(participant.Identity, out playerId) ||
+                localPlayer == null ||
                 !battleClient.Spawned.TryGetValue(playerId, out var remotePlayer) ||
                 remotePlayer == null)
             {
@@ -396,6 +414,75 @@ namespace Kodimodi
             distanceSquared = (localPlayer.transform.position - remotePlayer.transform.position).sqrMagnitude;
             return true;
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        private void LateUpdate()
+        {
+            var localPlayer = battleClient != null ? battleClient.LocalPlayer : null;
+            if (!showVideoSubscriptionLines || disconnecting || mRoom == null || localPlayer == null)
+            {
+                ClearSubscriptionLines();
+                return;
+            }
+
+            if (subscriptionLineMaterial == null)
+            {
+                var shader = Resources.Load<Shader>("VideoSubscriptionLine");
+                if (shader == null)
+                    return;
+
+                subscriptionLineMaterial = new Material(shader);
+            }
+
+            removedLines.Clear();
+            foreach (var pair in subscriptionLines)
+            {
+                if (!battleClient.Spawned.TryGetValue(pair.Key, out var player) || player == null)
+                {
+                    Destroy(pair.Value.gameObject);
+                    removedLines.Add(pair.Key);
+                }
+            }
+
+            foreach (var playerId in removedLines)
+                subscriptionLines.Remove(playerId);
+
+            Vector3 offset = Vector3.up;
+            Vector3 origin = localPlayer.transform.position + offset;
+            foreach (var pair in battleClient.Spawned)
+            {
+                if (pair.Value == null)
+                    continue;
+
+                if (!subscriptionLines.TryGetValue(pair.Key, out var line))
+                {
+                    var lineObject = new GameObject("Video subscription line");
+                    lineObject.transform.SetParent(transform, false);
+                    line = lineObject.AddComponent<LineRenderer>();
+                    line.sharedMaterial = subscriptionLineMaterial;
+                    line.useWorldSpace = true;
+                    line.positionCount = 2;
+                    line.widthMultiplier = 0.035f;
+                    line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    line.receiveShadows = false;
+                    subscriptionLines.Add(pair.Key, line);
+                }
+
+                Color color = playersWithVideo.Contains(pair.Key) ? Color.green : Color.red;
+                line.startColor = line.endColor = color;
+                line.SetPosition(0, origin);
+                line.SetPosition(1, pair.Value.transform.position + offset);
+            }
+        }
+
+        private void ClearSubscriptionLines()
+        {
+            foreach (var line in subscriptionLines.Values)
+                Destroy(line.gameObject);
+
+            subscriptionLines.Clear();
+        }
+#endif
 
         private void Update()
         {
@@ -577,6 +664,10 @@ namespace Kodimodi
 
         private void CloseCurrentRoom()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            playersWithVideo.Clear();
+            ClearSubscriptionLines();
+#endif
             monitor?.Unbind();
 
             foreach (var binding in videoBindings.Values)
@@ -626,6 +717,10 @@ namespace Kodimodi
         private void OnDestroy()
         {
             DisconnectFromRoom();
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (subscriptionLineMaterial != null)
+                Destroy(subscriptionLineMaterial);
+#endif
         }
 
         private void OnApplicationQuit()
