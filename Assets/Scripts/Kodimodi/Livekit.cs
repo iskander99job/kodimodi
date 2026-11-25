@@ -43,6 +43,10 @@ namespace Kodimodi
         private readonly HashSet<string> requestedSubscriptions = new();
         private readonly HashSet<string> seenPublications = new();
 
+#if UNITY_EDITOR
+        private readonly HashSet<int> activeVideoPlayers = new();
+#endif
+
         private Room mRoom;
         private BattleClient battleClient;
         private bool refreshSubscriptions;
@@ -324,6 +328,9 @@ namespace Kodimodi
 
         private void UpdateSubscriptions()
         {
+#if UNITY_EDITOR
+            activeVideoPlayers.Clear();
+#endif
             if (mRoom == null || mRoom.State != ConnectionState.Connected)
                 return;
 
@@ -334,7 +341,7 @@ namespace Kodimodi
 
             foreach (var participant in mRoom.RemoteParticipants.Values)
             {
-                bool hasPosition = TryGetDistanceSquared(participant, localPlayer, out float distanceSquared);
+                bool hasPosition = TryGetDistanceSquared(participant, localPlayer, out var playerId, out float distanceSquared);
                 bool videoAvailable = false;
 
                 foreach (var track in participant.VideoTrackPublications.Values)
@@ -351,6 +358,11 @@ namespace Kodimodi
                     if (inRange && publication.IsSubscribed && !publication.IsMuted)
                         videoAvailable = true;
                 }
+
+#if UNITY_EDITOR
+                if (videoAvailable)
+                    activeVideoPlayers.Add(playerId);
+#endif
 
                 foreach (var track in participant.AudioTrackPublications.Values)
                 {
@@ -382,11 +394,12 @@ namespace Kodimodi
                 requestedSubscriptions.Remove(sid);
         }
 
-        private bool TryGetDistanceSquared(RemoteParticipant participant, GameObject localPlayer, out float distanceSquared)
+        private bool TryGetDistanceSquared(
+            RemoteParticipant participant, GameObject localPlayer, out int playerId, out float distanceSquared)
         {
             distanceSquared = 0f;
-            if (localPlayer == null ||
-                !int.TryParse(participant.Identity, out int playerId) ||
+            if (!int.TryParse(participant.Identity, out playerId) ||
+                localPlayer == null ||
                 !battleClient.Spawned.TryGetValue(playerId, out var remotePlayer) ||
                 remotePlayer == null)
             {
@@ -396,6 +409,32 @@ namespace Kodimodi
             distanceSquared = (localPlayer.transform.position - remotePlayer.transform.position).sqrMagnitude;
             return true;
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying || disconnecting || battleClient == null)
+                return;
+
+            var localPlayer = battleClient.LocalPlayer;
+            if (localPlayer == null)
+                return;
+
+            var previousColor = Gizmos.color;
+            Vector3 offset = Vector3.up;
+            Vector3 origin = localPlayer.transform.position + offset;
+            foreach (var pair in battleClient.Spawned)
+            {
+                if (pair.Value == null)
+                    continue;
+
+                Gizmos.color = activeVideoPlayers.Contains(pair.Key) ? Color.green : Color.red;
+                Gizmos.DrawLine(origin, pair.Value.transform.position + offset);
+            }
+
+            Gizmos.color = previousColor;
+        }
+#endif
 
         private void Update()
         {
@@ -585,6 +624,9 @@ namespace Kodimodi
             videoBindings.Clear();
             requestedSubscriptions.Clear();
             seenPublications.Clear();
+#if UNITY_EDITOR
+            activeVideoPlayers.Clear();
+#endif
             refreshSubscriptions = false;
 
             foreach (var track in new List<Track>(attachedTracks))
