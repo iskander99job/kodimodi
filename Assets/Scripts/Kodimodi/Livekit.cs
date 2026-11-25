@@ -43,7 +43,10 @@ namespace Kodimodi
         private readonly HashSet<string> requestedSubscriptions = new();
         private readonly HashSet<string> seenPublications = new();
 
+        // Unity serializes this setting in the Editor for the WebGL player.
+#pragma warning disable CS0414
         [SerializeField] private bool showVideoSubscriptionLines = true;
+#pragma warning restore CS0414
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         private readonly HashSet<int> playersWithVideo = new();
