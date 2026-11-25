@@ -43,9 +43,9 @@ namespace Kodimodi
         private readonly HashSet<string> requestedSubscriptions = new();
         private readonly HashSet<string> seenPublications = new();
 
-#if UNITY_WEBGL && !UNITY_EDITOR
         [SerializeField] private bool showVideoSubscriptionLines = true;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
         private readonly HashSet<int> playersWithVideo = new();
         private readonly Dictionary<int, LineRenderer> subscriptionLines = new();
         private readonly List<int> removedLines = new();
