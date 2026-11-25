@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecc21cefffec4bd8ab89c9bae207ae0f, type: 3}
   m_Name: LivekitDevelopmentSettings
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.LivekitDevelopmentSettings
-  disableLivekit: 0
+  disableLivekit: 1

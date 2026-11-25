@@ -147931,7 +147931,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc3dc350c33f4b148fa2cda18e8217cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Kodimodi.Livekit
+  videoSubscribeDistance: 15
+  videoUnsubscribeDistance: 20
   cameraGuard: {fileID: 1968886159}
+  showVideoSubscriptionLines: 1
 --- !u!114 &1968886158
 MonoBehaviour:
   m_ObjectHideFlags: 0
