@@ -14,6 +14,9 @@ namespace Kodimodi
         private const float ConnectionRetryInterval = 2f;
         private const float VideoBindInterval = 0.25f;
 
+        [SerializeField, Min(0f)] private float videoSubscribeDistance = 15f;
+        [SerializeField, Min(0f)] private float videoUnsubscribeDistance = 20f;
+
         [SerializeField]
         private BattleCameraGuard cameraGuard;
 
@@ -23,6 +26,8 @@ namespace Kodimodi
             public string Identity;
 
             public RawImage Image;
+            public Texture Placeholder;
+            public Rect PlaceholderUv;
             public HTMLVideoElement Video;
 
             public HTMLVideoElement.VideoReceivedDelegate VideoReceived;
@@ -35,7 +40,12 @@ namespace Kodimodi
         private readonly HashSet<Track> attachedTracks =
             new HashSet<Track>();
 
+        private readonly HashSet<string> requestedSubscriptions = new();
+        private readonly HashSet<string> seenPublications = new();
+
         private Room mRoom;
+        private BattleClient battleClient;
+        private bool refreshSubscriptions;
         private LivekitCameraMonitor monitor;
 
         private int localId;
@@ -56,6 +66,7 @@ namespace Kodimodi
             this.roomToken = roomToken;
 
             nextVideoBind = 0f;
+            battleClient = GetComponent<BattleClient>();
 
             if (cameraGuard == null)
                 cameraGuard = GetComponent<BattleCameraGuard>();
@@ -159,10 +170,12 @@ namespace Kodimodi
 
                 mRoom.TrackSubscribed += OnTrackSubscribed;
                 mRoom.TrackUnsubscribed += OnTrackUnsubscribed;
+                mRoom.Reconnected += OnRoomReconnected;
 
                 monitor.Bind(mRoom);
 
-                return mRoom.Connect(LivekitURL, roomToken);
+                return mRoom.Connect(LivekitURL, roomToken,
+                    new RoomConnectOptions { AutoSubscribe = false });
             }
             catch (Exception e)
             {
@@ -303,6 +316,72 @@ namespace Kodimodi
             }
         }
 
+        private void OnRoomReconnected()
+        {
+            refreshSubscriptions = true;
+            nextVideoBind = 0f;
+        }
+
+        private void UpdateSubscriptions()
+        {
+            if (mRoom == null || mRoom.State != ConnectionState.Connected)
+                return;
+
+            var localPlayer = battleClient != null ? battleClient.LocalPlayer : null;
+            float nearDistance = videoSubscribeDistance;
+            float farDistance = Mathf.Max(nearDistance, videoUnsubscribeDistance);
+            seenPublications.Clear();
+
+            foreach (var participant in mRoom.RemoteParticipants.Values)
+            {
+                bool hasPosition = TryGetDistanceSquared(participant, localPlayer, out float distanceSquared);
+                foreach (var track in participant.TrackPublications.Values)
+                {
+                    if (track is not RemoteTrackPublication publication)
+                        continue;
+
+                    string sid = publication.TrackSid;
+                    if (string.IsNullOrEmpty(sid))
+                        continue;
+
+                    seenPublications.Add(sid);
+                    bool wasRequested = requestedSubscriptions.Contains(sid);
+                    float threshold = wasRequested ? farDistance : nearDistance;
+                    var kind = publication.Kind;
+                    bool shouldSubscribe = kind == TrackKind.Audio ||
+                        (kind == TrackKind.Video && hasPosition && distanceSquared <= threshold * threshold);
+
+                    if (shouldSubscribe != wasRequested || refreshSubscriptions ||
+                        (!shouldSubscribe && publication.IsSubscribed))
+                    {
+                        publication.SetSubscribed(shouldSubscribe);
+                        if (shouldSubscribe)
+                            requestedSubscriptions.Add(sid);
+                        else
+                            requestedSubscriptions.Remove(sid);
+                    }
+                }
+            }
+
+            requestedSubscriptions.IntersectWith(seenPublications);
+            refreshSubscriptions = false;
+        }
+
+        private bool TryGetDistanceSquared(RemoteParticipant participant, GameObject localPlayer, out float distanceSquared)
+        {
+            distanceSquared = 0f;
+            if (localPlayer == null ||
+                !int.TryParse(participant.Identity, out int playerId) ||
+                !battleClient.Spawned.TryGetValue(playerId, out var remotePlayer) ||
+                remotePlayer == null)
+            {
+                return false;
+            }
+
+            distanceSquared = (localPlayer.transform.position - remotePlayer.transform.position).sqrMagnitude;
+            return true;
+        }
+
         private void Update()
         {
             if (disconnecting ||
@@ -313,6 +392,8 @@ namespace Kodimodi
 
             nextVideoBind =
                 Time.unscaledTime + VideoBindInterval;
+
+            UpdateSubscriptions();
 
             foreach (var pair in videoBindings)
             {
@@ -345,6 +426,9 @@ namespace Kodimodi
 
                 if (binding.Image == null)
                     return;
+
+                binding.Placeholder = binding.Image.texture;
+                binding.PlaceholderUv = binding.Image.uvRect;
             }
 
             if (binding.Video == null)
@@ -359,7 +443,7 @@ namespace Kodimodi
 
                 binding.VideoReceived = texture =>
                 {
-                    if (!disconnecting &&
+                    if (texture != null && !disconnecting &&
                         videoBindings.TryGetValue(
                             publication, out var current) &&
                         ReferenceEquals(current, binding))
@@ -375,8 +459,8 @@ namespace Kodimodi
 
             // При замене головы используем тот же видеотрек
             // и его текущую текстуру.
-            ApplyVideoTexture(
-                binding.Image, binding.Video.Texture);
+            if (binding.Video.Texture != null)
+                ApplyVideoTexture(binding.Image, binding.Video.Texture);
         }
 
         private static void ApplyVideoTexture(
@@ -449,7 +533,8 @@ namespace Kodimodi
                     binding.Image.texture ==
                     binding.Video.Texture)
                 {
-                    ApplyVideoTexture(binding.Image, null);
+                    binding.Image.texture = binding.Placeholder;
+                    binding.Image.uvRect = binding.PlaceholderUv;
                 }
             }
 
@@ -483,6 +568,9 @@ namespace Kodimodi
                 ReleaseVideo(binding);
 
             videoBindings.Clear();
+            requestedSubscriptions.Clear();
+            seenPublications.Clear();
+            refreshSubscriptions = false;
 
             foreach (var track in new List<Track>(attachedTracks))
                 DetachTrack(track);
@@ -495,6 +583,7 @@ namespace Kodimodi
 
             room.TrackSubscribed -= OnTrackSubscribed;
             room.TrackUnsubscribed -= OnTrackUnsubscribed;
+            room.Reconnected -= OnRoomReconnected;
 
             try
             {
