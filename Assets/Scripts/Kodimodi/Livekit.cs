@@ -335,36 +335,51 @@ namespace Kodimodi
             foreach (var participant in mRoom.RemoteParticipants.Values)
             {
                 bool hasPosition = TryGetDistanceSquared(participant, localPlayer, out float distanceSquared);
-                foreach (var track in participant.TrackPublications.Values)
+                bool videoAvailable = false;
+
+                foreach (var track in participant.VideoTrackPublications.Values)
                 {
                     if (track is not RemoteTrackPublication publication)
                         continue;
 
-                    string sid = publication.TrackSid;
-                    if (string.IsNullOrEmpty(sid))
-                        continue;
+                    float threshold = requestedSubscriptions.Contains(publication.TrackSid)
+                        ? farDistance
+                        : nearDistance;
+                    bool inRange = hasPosition && distanceSquared <= threshold * threshold;
+                    UpdateSubscription(publication, inRange);
 
-                    seenPublications.Add(sid);
-                    bool wasRequested = requestedSubscriptions.Contains(sid);
-                    float threshold = wasRequested ? farDistance : nearDistance;
-                    var kind = publication.Kind;
-                    bool shouldSubscribe = kind == TrackKind.Audio ||
-                        (kind == TrackKind.Video && hasPosition && distanceSquared <= threshold * threshold);
+                    if (inRange && publication.IsSubscribed && !publication.IsMuted)
+                        videoAvailable = true;
+                }
 
-                    if (shouldSubscribe != wasRequested || refreshSubscriptions ||
-                        (!shouldSubscribe && publication.IsSubscribed))
-                    {
-                        publication.SetSubscribed(shouldSubscribe);
-                        if (shouldSubscribe)
-                            requestedSubscriptions.Add(sid);
-                        else
-                            requestedSubscriptions.Remove(sid);
-                    }
+                foreach (var track in participant.AudioTrackPublications.Values)
+                {
+                    if (track is RemoteTrackPublication publication)
+                        UpdateSubscription(publication, videoAvailable);
                 }
             }
 
             requestedSubscriptions.IntersectWith(seenPublications);
             refreshSubscriptions = false;
+        }
+
+        private void UpdateSubscription(RemoteTrackPublication publication, bool shouldSubscribe)
+        {
+            string sid = publication.TrackSid;
+            if (string.IsNullOrEmpty(sid))
+                return;
+
+            seenPublications.Add(sid);
+            bool wasRequested = requestedSubscriptions.Contains(sid);
+            if (shouldSubscribe == wasRequested && !refreshSubscriptions &&
+                (shouldSubscribe || !publication.IsSubscribed))
+                return;
+
+            publication.SetSubscribed(shouldSubscribe);
+            if (shouldSubscribe)
+                requestedSubscriptions.Add(sid);
+            else
+                requestedSubscriptions.Remove(sid);
         }
 
         private bool TryGetDistanceSquared(RemoteParticipant participant, GameObject localPlayer, out float distanceSquared)
